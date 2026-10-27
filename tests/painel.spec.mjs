@@ -31,7 +31,7 @@ test('a gerente percorre as seis áreas do MVP do Painel', async ({ page }) => {
 
   await expect(page).toHaveTitle(/Painel de Indicadores/);
   await expect(
-    page.getByText('Dados mistos · Usuários carregados; Empresas carregadas; Portal carregado; demais áreas fictícias'),
+    page.getByText('Dados mistos · Usuários carregados; Acessos carregados; Empresas carregadas; Portal carregado; demais áreas fictícias'),
   ).toBeVisible();
 
   const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
@@ -89,8 +89,9 @@ test('a gerente vê os indicadores de Usuários vindos de uma carga válida', as
   await expect(usersPanel.getByText('44', { exact: true })).toBeVisible();
   await expect(usersPanel.getByText('64', { exact: true })).toBeVisible();
   await expect(usersPanel.getByText('Indisponível', { exact: true })).toBeVisible();
-  await expect(usersPanel.getByText('Origem: MySQL · Estado: pronto', { exact: true })).toHaveCount(2);
-  await expect(usersPanel.getByText('Abrangência: 01/08/2026 a 30/09/2026', { exact: true })).toBeVisible();
+  const usersSource = usersPanel.getByRole('article', { name: 'Estado dos arquivos de Usuários' });
+  await expect(usersSource.getByText('Origem: MySQL · Estado: pronto', { exact: true })).toHaveCount(2);
+  await expect(usersSource.getByText('Abrangência: 01/08/2026 a 30/09/2026', { exact: true })).toBeVisible();
 
   await navigation.getByRole('tab', { name: 'Empresas', exact: true }).click();
   const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
@@ -106,7 +107,7 @@ test('a gerente vê os indicadores de Usuários vindos de uma carga válida', as
 
 test('uma tentativa inválida preserva a última carga válida de Usuários', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; Empresas carregadas; Portal carregado; demais áreas fictícias')).toBeVisible();
+  await expect(page.getByText('Dados mistos · Usuários carregados; Acessos carregados; Empresas carregadas; Portal carregado; demais áreas fictícias')).toBeVisible();
 
   await writeFile(
     resolve(testDataPath, 'usuarios.csv'),
@@ -165,7 +166,7 @@ test('sem cache anterior, somente o conjunto inválido aparece como Indisponíve
 
 test('o contrato rejeita duplicidade, total negativo, PII e período inválido sem perder a carga ativa', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; Empresas carregadas; Portal carregado; demais áreas fictícias')).toBeVisible();
+  await expect(page.getByText('Dados mistos · Usuários carregados; Acessos carregados; Empresas carregadas; Portal carregado; demais áreas fictícias')).toBeVisible();
 
   const invalidAttempts = [
     {
@@ -240,7 +241,7 @@ test('sem JavaScript, indicadores funcionais não exibem valores fictícios', as
 
 test('um backup íntegro recupera a última carga quando a troca do cache é interrompida', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; Empresas carregadas; Portal carregado; demais áreas fictícias')).toBeVisible();
+  await expect(page.getByText('Dados mistos · Usuários carregados; Acessos carregados; Empresas carregadas; Portal carregado; demais áreas fictícias')).toBeVisible();
 
   const userCache = resolve(testCachePath, 'usuarios.json');
   const userBackup = resolve(testCachePath, 'usuarios.json.bak');
@@ -440,7 +441,8 @@ test('Issue #5 classifica empresas por si_status, mantém status para auditoria 
   await expect(companiesPanel.getByText('wait_aprovement · 9 fora dos indicadores', { exact: true })).toBeVisible();
   await expect(companiesPanel.getByText('Operacional', { exact: true }).first()).toBeVisible();
   await expect(companiesPanel.getByText('Production', { exact: true })).toBeVisible();
-  await expect(companiesPanel.getByText('Origem: MySQL · Estado: pronto', { exact: true })).toBeVisible();
+  await expect(companiesPanel.getByRole('article', { name: 'Estado do arquivo de Empresas Clientes' })
+    .getByText('Origem: MySQL · Estado: pronto', { exact: true })).toBeVisible();
   await expect(companiesPanel.getByText('Referência: 30/09/2026', { exact: true })).toBeVisible();
   await expect(companiesPanel.getByText('Gerado em:', { exact: false })).toBeVisible();
   await expect(companiesPanel.getByText('empresas.csv é uma fotografia atual e não informa quando ocorreu cada suspensão.', { exact: true })).toBeVisible();
@@ -519,4 +521,221 @@ test('Issue #5 sem cache deixa empresas inválidas indisponíveis e nunca conver
   await expect(companiesPanel.locator('[data-company-value="inactive"]')).toHaveText('Indisponível');
   await expect(companiesPanel.locator('[data-company-value="suspended-current"]')).toHaveText('Indisponível');
   await expect(companiesPanel.getByText('0', { exact: true })).toHaveCount(0);
+});
+
+
+test.describe('Issue #6 · Acessos e ranking', () => {
+  test('carrega combinações válidas e oferece somente filtros sustentados pelos dados', async ({ page }) => {
+    await page.goto('/painel.html');
+
+    const response = await page.request.get('/api/acessos');
+    expect(response.status()).toBe(200);
+    const payload = await response.json();
+    expect(payload).toMatchObject({
+      status: 'ready',
+      indicators: {
+        combinations: [
+          { month: '2026-08', product: 'Portal Web', totalLogins: 900, uniqueUsers: 150, distinctCompanies: 12, coverage: 'ready' },
+          { month: '2026-08', product: 'Aplicativo', totalLogins: 320, uniqueUsers: 86, distinctCompanies: 9, coverage: 'partial' },
+          { month: '2026-09', product: 'Portal Web', totalLogins: 1200, uniqueUsers: 180, distinctCompanies: 14, coverage: 'ready' },
+          { month: '2026-09', product: 'Loja Web', totalLogins: 240, uniqueUsers: 75, distinctCompanies: 8, coverage: 'ready' },
+          { month: '2026-09', product: 'Aplicativo', totalLogins: 480, uniqueUsers: 102, distinctCompanies: 10, coverage: 'partial' },
+          { month: '2026-09', product: 'Loja Aplicativo', totalLogins: 0, uniqueUsers: 0, distinctCompanies: 0, coverage: 'partial' },
+        ],
+      },
+    });
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
+    const periodFilter = page.getByLabel('Período analisado');
+    const productFilter = page.getByLabel('Produto Digital');
+
+    await expect(periodFilter.locator('option')).toHaveText(['Setembro de 2026', 'Agosto de 2026']);
+    await expect(productFilter.locator('option')).toHaveText(['Portal Web', 'Loja Web', 'Aplicativo', 'Loja Aplicativo']);
+    await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('1.200');
+    await expect(usersPanel.locator('[data-access-value="unique-users"]')).toHaveText('180');
+    await expect(usersPanel.locator('[data-access-value="distinct-companies"]')).toHaveText('14');
+    await expect(usersPanel.getByText('Dados prontos', { exact: true })).toBeVisible();
+
+    await productFilter.selectOption('Aplicativo');
+    await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('480');
+    await expect(usersPanel.locator('#access-coverage')).toHaveText('Cobertura parcial');
+
+    await periodFilter.selectOption('2026-08');
+    await expect(productFilter).toHaveValue('Aplicativo');
+    await expect(productFilter.locator('option')).toHaveText(['Portal Web', 'Aplicativo']);
+    await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('320');
+    await expect(usersPanel.getByText('Loja Web e Loja Aplicativo: não informado neste período.', { exact: true })).toBeVisible();
+  });
+
+  test('ordena o ranking por logins com desempate determinístico e mostra metadados', async ({ page }) => {
+    await page.goto('/painel.html');
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Empresas', exact: true })
+      .click();
+
+    const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
+    const ranking = companiesPanel.locator('#access-ranking');
+    await expect(ranking.locator('tbody tr')).toHaveCount(3);
+    await expect(ranking.locator('tbody tr').nth(0)).toContainText('EMP-ALFA');
+    await expect(ranking.locator('tbody tr').nth(1)).toContainText('EMP-BETA');
+    await expect(ranking.locator('tbody tr').nth(2)).toContainText('EMP-GAMA');
+    await expect(ranking.locator('tbody tr').nth(1)).toContainText('300');
+    await expect(ranking.locator('tbody tr').nth(1)).toContainText('30');
+    await expect(ranking.getByText('Origem: MySQL · Estado: pronto', { exact: true })).toBeVisible();
+    await expect(ranking.getByText('Abrangência: 01/08/2026 a 30/09/2026', { exact: true })).toBeVisible();
+    await expect(companiesPanel.getByText('Ranking de setembro de 2026 · Portal Web', { exact: true })).toBeVisible();
+
+    await page.getByLabel('Produto Digital').selectOption('Aplicativo');
+    await expect(ranking.locator('tbody tr')).toHaveCount(2);
+    await expect(companiesPanel.getByText('Ranking com cobertura parcial', { exact: true })).toBeVisible();
+  });
+
+  test('preserva caches válidos por arquivo após rejeição e não registra conteúdo das linhas', async ({ page }) => {
+    await page.goto('/painel.html');
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    await expect(page.getByRole('tabpanel', { name: 'Usuários e Acessos' })
+      .locator('[data-access-value="total-logins"]')).toHaveText('1.200');
+    await writeFile(
+      resolve(testDataPath, 'acessos.csv'),
+      'mes;produto_digital;total_logins;usuarios_unicos;empresas_clientes_distintas;email\n' +
+        '2026-09;Portal Web;999;10;2;segredo@example.com\n',
+      'utf8',
+    );
+
+    const response = await page.request.get('/api/acessos');
+    const payload = await response.json();
+    expect(payload.status).toBe('stale');
+    expect(payload.indicators.combinations).toContainEqual({
+      month: '2026-09', product: 'Portal Web', totalLogins: 1200, uniqueUsers: 180, distinctCompanies: 14, coverage: 'ready',
+    });
+    expect(payload.rejections).toContainEqual(expect.objectContaining({ file: 'acessos.csv' }));
+    expect(JSON.stringify(payload.rejections)).not.toContain('segredo@example.com');
+    expect(payload.ranking).toEqual(expect.arrayContaining([
+      expect.objectContaining({ month: '2026-09', product: 'Portal Web', companyId: 'EMP-ALFA' }),
+    ]));
+
+    await page.reload();
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
+    await expect(usersPanel.getByText('Última carga válida de acessos preservada', { exact: true })).toBeVisible();
+    await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('1.200');
+    await expect(page.getByText('segredo@example.com', { exact: false })).toHaveCount(0);
+  });
+
+  test('rejeita usuários únicos acima dos logins e ranking fora de ordem sem perder os caches', async ({ page }) => {
+    await page.goto('/painel.html');
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    await expect(page.getByRole('tabpanel', { name: 'Usuários e Acessos' })
+      .locator('[data-access-value="total-logins"]')).toHaveText('1.200');
+
+    await writeFile(
+      resolve(testDataPath, 'acessos.csv'),
+      'mes;produto_digital;total_logins;usuarios_unicos;empresas_clientes_distintas\n' +
+        '2026-09;Portal Web;10;11;2\n',
+      'utf8',
+    );
+    let response = await page.request.get('/api/acessos');
+    let payload = await response.json();
+    expect(payload.status).toBe('stale');
+    expect(payload.rejections).toContainEqual(expect.objectContaining({
+      file: 'acessos.csv',
+      reasons: ['acessos.csv: usuarios_unicos supera total_logins na linha 2.'],
+    }));
+    expect(payload.indicators.combinations).toContainEqual(expect.objectContaining({
+      month: '2026-09', product: 'Portal Web', totalLogins: 1200,
+    }));
+
+    await cp(resolve(validLoadPath, 'acessos.csv'), resolve(testDataPath, 'acessos.csv'));
+    await writeFile(
+      resolve(testDataPath, 'ranking_acessos.csv'),
+      'mes;produto_digital;posicao;empresa_id_opaco;total_logins;usuarios_unicos\n' +
+        '2026-09;Portal Web;1;EMP-ALFA;100;20\n' +
+        '2026-09;Portal Web;2;EMP-BETA;200;30\n',
+      'utf8',
+    );
+    response = await page.request.get('/api/acessos');
+    payload = await response.json();
+    expect(payload.status).toBe('stale');
+    expect(payload.rejections).toContainEqual(expect.objectContaining({
+      file: 'ranking_acessos.csv',
+      reasons: ['ranking_acessos.csv: posições não seguem ordem decrescente de logins.'],
+    }));
+    expect(payload.ranking).toContainEqual(expect.objectContaining({
+      month: '2026-09', product: 'Portal Web', companyId: 'EMP-ALFA', totalLogins: 500,
+    }));
+  });
+
+  test('sem cache de acessos, arquivo inválido fica indisponível sem transformar ausência em zero', async ({ page }) => {
+    await writeFile(
+      resolve(testDataPath, 'acessos.csv'),
+      'mes;produto_digital;total_logins;usuarios_unicos;empresas_clientes_distintas\n' +
+        '2026-09;Portal Web;10;11;2\n',
+      'utf8',
+    );
+
+    await page.goto('/painel.html');
+    const response = await page.request.get('/api/acessos');
+    const payload = await response.json();
+    expect(payload.status).toBe('partial');
+    expect(payload.indicators.combinations).toEqual([]);
+    expect(payload.ranking).not.toEqual([]);
+    expect(payload.rejections).toContainEqual(expect.objectContaining({ file: 'acessos.csv' }));
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
+    await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('Indisponível');
+    await expect(usersPanel.locator('[data-access-value="unique-users"]')).toHaveText('Indisponível');
+    await expect(usersPanel.locator('[data-access-value="distinct-companies"]')).toHaveText('Indisponível');
+    await expect(page.getByLabel('Período analisado')).toBeDisabled();
+    await expect(page.getByLabel('Produto Digital')).toBeDisabled();
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Empresas', exact: true })
+      .click();
+    const ranking = page.getByRole('tabpanel', { name: 'Empresas' }).locator('#access-ranking');
+    await expect(ranking.getByText('Origem: MySQL · Estado: pronto', { exact: true })).toBeVisible();
+    await expect(ranking.locator('tbody').getByText('Ranking não informado para esta combinação.', { exact: true })).toBeVisible();
+    await expect(ranking.getByText('0', { exact: true })).toHaveCount(0);
+  });
+
+  test('distingue combinação ausente de zero explícito e mantém o aviso de arquivo ausente', async ({ page }) => {
+    await page.goto('/painel.html');
+    await rm(resolve(testDataPath, 'ranking_acessos.csv'));
+
+    await page.reload();
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
+    await expect(usersPanel.getByText('Fonte do ranking não atualizada', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Produto Digital').locator('option', { hasText: 'Loja Aplicativo' })).toHaveCount(1);
+    await page.getByLabel('Produto Digital').selectOption('Loja Aplicativo');
+    await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('0');
+    await expect(usersPanel.locator('[data-access-value="unique-users"]')).toHaveText('0');
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Empresas', exact: true })
+      .click();
+    const ranking = page.getByRole('tabpanel', { name: 'Empresas' }).locator('#access-ranking');
+    await expect(ranking.locator('tbody').getByText('Ranking não informado para esta combinação.', { exact: true })).toBeVisible();
+    await expect(ranking.getByText('0', { exact: true })).toHaveCount(0);
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    await page.getByLabel('Período analisado').selectOption('2026-08');
+    await expect(page.getByLabel('Produto Digital').locator('option')).toHaveText(['Portal Web', 'Aplicativo']);
+    await expect(usersPanel.getByText('Loja Web e Loja Aplicativo: não informado neste período.', { exact: true })).toBeVisible();
+  });
 });

@@ -122,6 +122,23 @@ export function assertMonth(value, fileName, rowNumber) {
   return value;
 }
 
+export function monthBounds(month) {
+  const [year, monthNumber] = month.split('-').map(Number);
+  return {
+    start: `${month}-01`,
+    end: new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10),
+  };
+}
+
+export function assertMonthInsideSource(month, source, fileName, rowNumber = null) {
+  const bounds = monthBounds(month);
+  if (bounds.start < source.periodStart || bounds.end > source.periodEnd) {
+    const location = rowNumber === null ? '' : ` na linha ${rowNumber}`;
+    throw new DataContractError(`${fileName}: o mês ${month} está fora do período declarado no manifesto${location}.`);
+  }
+  return month;
+}
+
 export function nonNegativeInteger(value, field, fileName, rowNumber) {
   if (!/^(?:0|[1-9]\d*)$/.test(value)) {
     throw new DataContractError(`${fileName}: ${field} deve ser um inteiro não negativo na linha ${rowNumber}.`);

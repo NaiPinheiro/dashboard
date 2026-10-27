@@ -48,13 +48,12 @@
       <div class="brand-mark"><svg class="svg-icon" aria-hidden="true"><use href="#i-chart"/></svg></div>
       <div><strong>Painel de Indicadores</strong><small>Lyra M2M</small></div>
     </div>
-    <div class="demo-flag" id="data-mode" role="status" aria-live="polite"><span class="demo-dot"></span> Carregando dados de Usuários…</div>
-    <div class="filters" aria-label="Filtros ilustrativos">
-      <div class="filter"><label for="periodo">Período analisado</label><select id="periodo" data-demo-filter><option>Setembro 2026</option><option>2ª quinzena · Set/26</option><option>Agosto 2026</option></select></div>
-      <div class="filter"><label for="produto">Produto</label><select id="produto" data-demo-filter><option>Todos os produtos</option><option>Portal</option><option>Loja</option><option>Aplicativo</option></select></div>
+    <div class="demo-flag" id="data-mode" role="status" aria-live="polite"><span class="demo-dot"></span> Carregando fontes locais…</div>
+    <div class="filters" aria-label="Filtros de Acessos">
+      <div class="filter"><label for="periodo">Período analisado</label><select id="periodo" disabled><option value="">Carregando períodos…</option></select></div>
+      <div class="filter"><label for="produto">Produto Digital</label><select id="produto" disabled><option value="">Carregando produtos…</option></select></div>
     </div>
   </header>
-  <div id="filter-note" class="filter-note" role="status" aria-live="polite">Demonstração visual: os filtros ainda não recalculam os números.</div>
 
   <nav class="tabbar" role="tablist" aria-label="Áreas do painel">
     <button class="tab" id="tab-overview" role="tab" aria-selected="true" aria-controls="overview"><svg class="svg-icon" aria-hidden="true"><use href="#i-chart"/></svg>Visão geral</button>
@@ -70,7 +69,7 @@
       <div class="page-heading"><div><h1>Visão geral de setembro</h1><p>Leitura dos indicadores da Lyra M2M, comparada a agosto de 2026.</p></div><div class="period-chip"><span class="status-dot"></span>Último mês fechado</div></div>
       <div class="hero-grid numbers">
         <article class="feature-metric"><div class="metric-label"><span>Total de usuários</span><svg class="svg-icon" aria-hidden="true"><use href="#i-users"/></svg></div><div class="metric-main"><span class="metric-value unavailable-value" data-user-value="current-total">Indisponível</span><span class="delta neutral" data-user-value="total-state">Sem carga válida</span></div><div class="metric-caption" data-user-value="total-caption">Aguardando a Pasta de Dados</div><div class="pulse" data-user-value="total-pulse" hidden></div></article>
-        <article class="feature-metric access"><div class="metric-label"><span>Logins realizados</span><svg class="svg-icon" aria-hidden="true"><use href="#i-access"/></svg></div><div class="metric-main"><span class="metric-value">6.534</span><span class="delta good">+522 · +8,7%</span></div><div class="metric-caption">296 usuários únicos acessaram</div><div class="pulse" aria-label="Atual 6.534; anterior 6.012"><div class="pulse-line"></div><span class="pulse-prev" style="left:44%"></span><span class="pulse-now" style="left:80%"></span></div><div class="pulse-legend"><span>Anterior · 6.012</span><span>Atual · 6.534</span></div></article>
+        <article class="feature-metric access"><div class="metric-label"><span>Logins realizados</span><svg class="svg-icon" aria-hidden="true"><use href="#i-access"/></svg></div><div class="metric-main"><span class="metric-value unavailable-value" data-access-value="overview-logins">Indisponível</span><span class="delta neutral" id="access-overview-coverage">Sem carga válida</span></div><div class="metric-caption" data-access-value="overview-caption">Aguardando acessos.csv</div></article>
         <article class="feature-metric orders"><div class="metric-label"><span>Pedidos criados</span><svg class="svg-icon" aria-hidden="true"><use href="#i-orders"/></svg></div><div class="metric-main"><span class="metric-value unavailable-value">Indisponível</span><span class="delta neutral">Dados futuros</span></div><div class="metric-caption">Sem contrato aprovado para Pedidos</div></article>
         <div class="status-row">
           <article class="stat"><div class="stat-top"><span>Novos usuários</span><svg class="svg-icon" aria-hidden="true"><use href="#i-users"/></svg></div><strong class="stat-value unavailable-value" data-user-value="new-users">Indisponível</strong><div class="stat-foot"><span data-user-value="new-users-previous">Período anterior indisponível</span><span class="trend-good" data-user-value="new-users-delta">Sem comparação</span></div></article>
@@ -81,7 +80,7 @@
         </div>
       </div>
       <div class="content-grid">
-        <article class="card"><div class="card-header"><div><h2>Ritmo dos últimos 13 meses</h2><div class="card-sub">Logins da Lyra M2M · outubro/2025 a setembro/2026</div></div><span class="source-tag">Tendência mensal</span></div><svg class="line-chart" viewBox="0 0 780 190" role="img" aria-label="Linha de logins mensais crescendo de 4.180 para 6.534"><path class="chart-grid" d="M42 20H760M42 70H760M42 120H760M42 170H760"/><path class="chart-area" d="M42 143L100 137L158 129L216 133L274 118L332 111L390 101L448 94L506 88L564 74L622 69L680 58L738 42L738 170L42 170Z"/><path class="chart-line" d="M42 143L100 137L158 129L216 133L274 118L332 111L390 101L448 94L506 88L564 74L622 69L680 58L738 42"/><circle class="chart-point" cx="738" cy="42" r="5"/><g class="axis-label"><text x="42" y="186">Out/25</text><text x="210" y="186">Jan/26</text><text x="384" y="186">Abr/26</text><text x="558" y="186">Jul/26</text><text x="710" y="186">Set/26</text><text x="2" y="24">7 mil</text><text x="7" y="124">4 mil</text></g></svg></article>
+        <article class="card"><div class="card-header"><div><h2>Leitura de Acessos</h2><div class="card-sub">A combinação selecionada usa somente logins concluídos informados em acessos.csv</div></div><span class="source-tag" id="overview-access-source">Fonte em validação</span></div><div class="not-available"><div><svg class="svg-icon" aria-hidden="true"><use href="#i-access"/></svg><strong>Tendência histórica não informada</strong><p>O contrato 1.0 sustenta os totais mensais por Produto Digital, sem preencher meses ou combinações ausentes.</p></div></div></article>
         <aside class="card"><div class="card-header"><div><h2>Pontos para comentar</h2><div class="card-sub">Leitura rápida para conduzir a reunião</div></div></div><div class="attention-list"><div class="attention"><div class="attention-icon good"><svg class="svg-icon" aria-hidden="true"><use href="#i-check"/></svg></div><div><strong>Adoção em alta</strong><small>Mais usuários e mais logins no período</small></div><span class="attention-value">+8,4%</span></div><div class="attention"><div class="attention-icon warn"><svg class="svg-icon" aria-hidden="true"><use href="#i-alert"/></svg></div><div><strong>Suspensões recentes</strong><small>A fonte atual não informa a data da suspensão</small></div><span class="attention-value">Indisponível</span></div><div class="attention"><div class="attention-icon bad"><svg class="svg-icon" aria-hidden="true"><use href="#i-pause"/></svg></div><div><strong>Inatividade cresceu</strong><small>Usuários sem acesso e status inativo</small></div><span class="attention-value">+7</span></div></div></aside>
       </div>
     </section>
@@ -94,8 +93,10 @@
         <article class="card compact-kpi span-3"><div class="stat-top"><span>Novos usuários</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big unavailable-value" data-user-value="new-users">Indisponível</div><div class="compare"><span data-user-value="new-users-previous">Período anterior indisponível</span><span class="trend-good" data-user-value="new-users-delta">Sem comparação</span></div></article>
         <article class="card compact-kpi span-3"><div class="stat-top"><span>Baixas</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big unavailable-value">Indisponível</div><div class="compare"><span>Arquivos não trazem data de baixa</span><span class="trend-warn">Pendente</span></div></article>
         <article class="card compact-kpi span-3"><div class="stat-top"><span>Inativos · 30 dias</span><svg class="svg-icon"><use href="#i-pause"/></svg></div><div class="big unavailable-value" data-user-value="inactive-30">Indisponível</div><div class="compare"><span>Data de referência</span><span data-user-value="inactivity-reference">Referência pendente</span></div></article>
-        <article class="card span-7"><div class="card-header"><div><h2>Logins por mês</h2><div class="card-sub">Total de entradas bem-sucedidas</div></div><span class="source-tag">6.534 em setembro</span></div><svg class="line-chart" viewBox="0 0 780 190" role="img" aria-label="Tendência mensal de logins"><path class="chart-grid" d="M42 20H760M42 70H760M42 120H760M42 170H760"/><path class="chart-area" d="M42 143L100 137L158 129L216 133L274 118L332 111L390 101L448 94L506 88L564 74L622 69L680 58L738 42L738 170L42 170Z"/><path class="chart-line" d="M42 143L100 137L158 129L216 133L274 118L332 111L390 101L448 94L506 88L564 74L622 69L680 58L738 42"/><g class="axis-label"><text x="42" y="186">Out/25</text><text x="210" y="186">Jan/26</text><text x="384" y="186">Abr/26</text><text x="558" y="186">Jul/26</text><text x="710" y="186">Set/26</text></g></svg></article>
-        <article class="card span-5"><div class="card-header"><div><h2>Acessos por produto</h2><div class="card-sub">Logins totais · Lyra M2M</div></div></div><div class="bars"><div class="bar-row"><span class="bar-label">Portal</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-value">3.482</span></div><div class="bar-row"><span class="bar-label">Aplicativo</span><div class="bar-track"><div class="bar-fill cyan" style="width:47%"></div></div><span class="bar-value">1.624</span></div><div class="bar-row future-data"><span class="bar-label">Loja</span><span class="bar-value">Dados futuros</span></div></div><div class="footer-note"><span>Usuários únicos no período</span><strong>296</strong></div></article>
+        <article class="card source-summary span-12" aria-label="Estado dos arquivos de Acessos"><div class="source-summary-main"><span class="status-dot"></span><div><strong id="access-source-state">Validando acessos.csv e ranking_acessos.csv</strong><small id="access-source-message">Os indicadores aparecem somente para combinações válidas de mês e Produto Digital.</small></div></div><div class="source-summary-files"><div class="source-file-row"><strong>Acessos</strong><span id="access-source-origin">Origem: indisponível</span><span id="access-source-period">Abrangência: indisponível</span><span id="access-load-state">Sem arquivo válido</span></div><div class="source-file-row"><strong>Ranking de Empresas Clientes</strong><span id="ranking-source-origin">Origem: indisponível</span><span id="ranking-source-period">Abrangência: indisponível</span><span id="ranking-load-state">Sem arquivo válido</span></div></div><div class="attention-list" id="access-notices" aria-live="polite"></div></article>
+        <article class="card compact-kpi span-4"><div class="stat-top"><span>Logins</span><svg class="svg-icon" aria-hidden="true"><use href="#i-access"/></svg></div><div class="big unavailable-value" data-access-value="total-logins">Indisponível</div><div class="compare"><span id="access-selection-label">Período e produto indisponíveis</span><span id="access-coverage">Sem carga válida</span></div></article>
+        <article class="card compact-kpi span-4"><div class="stat-top"><span>Usuários únicos</span><svg class="svg-icon" aria-hidden="true"><use href="#i-users"/></svg></div><div class="big unavailable-value" data-access-value="unique-users">Indisponível</div><div class="compare"><span>Logins concluídos com sucesso</span><span id="access-unique-state">Não informado</span></div></article>
+        <article class="card compact-kpi span-4"><div class="stat-top"><span>Empresas Clientes distintas</span><svg class="svg-icon" aria-hidden="true"><use href="#i-company"/></svg></div><div class="big unavailable-value" data-access-value="distinct-companies">Indisponível</div><div class="compare"><span>Na combinação selecionada</span><span id="access-company-state">Não informado</span></div></article>
       </div>
     </section>
 
@@ -104,7 +105,7 @@
       <div class="section-grid numbers">
         <article class="card source-summary span-12" aria-label="Estado do arquivo de Empresas Clientes"><div class="source-summary-main"><span class="status-dot"></span><div><strong id="companies-source-state">Validando empresas.csv</strong><small id="companies-source-message">Os totais aparecem somente após a validação integral do arquivo.</small></div></div><div class="source-summary-files"><div class="source-file-row"><strong>Situação atual</strong><span id="companies-source-origin">Origem: indisponível</span><span id="companies-source-reference">Referência: indisponível</span><span id="companies-source-partial">Sem arquivo válido</span></div><div class="source-file-row"><strong>Atualização</strong><span id="companies-source-generated">Geração: indisponível</span><span id="companies-source-observation">Observação: indisponível</span><span id="companies-load-state">Aguardando carga</span></div></div><div class="attention-list" id="companies-warnings" aria-live="polite"></div></article>
         <div class="summary-band company-summary span-12"><div><h2>Saúde da base de empresas</h2><p>Classificação atual da Lyra M2M</p></div><div class="band-metric"><small>Ativas</small><strong class="unavailable-value" data-company-value="active">Indisponível</strong></div><div class="band-metric"><small>Inativas</small><strong class="unavailable-value" data-company-value="inactive">Indisponível</strong></div><div class="band-metric"><small>Suspensas atualmente</small><strong class="unavailable-value" data-company-value="suspended-current">Indisponível</strong></div><div class="band-metric"><small>Suspensas · 30 dias</small><strong class="unavailable-value" data-company-value="suspended-30-days">Indisponível</strong></div></div>
-        <article class="card span-7"><div class="card-header"><div><h2>Empresas que mais acessaram</h2><div class="card-sub">Ordenadas por logins; usuários únicos como contexto</div></div><span class="source-tag">Dados fictícios · setembro 2026</span></div><table><thead><tr><th>#</th><th>Empresa cliente</th><th>Logins</th><th>Usuários</th></tr></thead><tbody><tr><td><span class="rank">1</span></td><td><div class="company-cell"><span class="company-avatar">AH</span>Agro Horizonte</div></td><td>612</td><td>28</td></tr><tr><td><span class="rank">2</span></td><td><div class="company-cell"><span class="company-avatar">SP</span>Saúde Ponto</div></td><td>544</td><td>24</td></tr><tr><td><span class="rank">3</span></td><td><div class="company-cell"><span class="company-avatar">LA</span>Logística Aurora</div></td><td>438</td><td>19</td></tr><tr><td><span class="rank">4</span></td><td><div class="company-cell"><span class="company-avatar">VS</span>Varejo Serra</div></td><td>391</td><td>17</td></tr><tr><td><span class="rank">5</span></td><td><div class="company-cell"><span class="company-avatar">CS</span>Conexão Sul</div></td><td>342</td><td>15</td></tr></tbody></table></article>
+        <article class="card span-7" id="access-ranking"><div class="card-header"><div><h2>Empresas que mais acessaram</h2><div class="card-sub" id="access-ranking-period">Ranking não informado para esta combinação.</div></div><span class="source-tag" id="access-ranking-coverage">Sem carga válida</span></div><div class="source-summary-files"><div class="source-file-row"><strong>Fonte do ranking</strong><span id="access-ranking-source-origin">Origem: indisponível</span><span id="access-ranking-source-period">Abrangência: indisponível</span><span id="access-ranking-source-state">Sem arquivo válido</span></div></div><table><thead><tr><th>#</th><th>Empresa Cliente</th><th>Logins</th><th>Usuários únicos</th></tr></thead><tbody id="access-ranking-body"><tr><td colspan="4">Ranking não informado para esta combinação.</td></tr></tbody></table></article>
         <article class="card span-5"><div class="card-header"><div><h2>Mais usuários criados</h2><div class="card-sub">Códigos anônimos protegem os nomes das empresas</div></div><span class="source-tag" id="users-ranking-period">Dados carregados · período pendente</span></div><div class="bars" id="users-ranking" aria-live="polite"><div class="bar-row"><span class="bar-label">Aguardando carga</span><div class="bar-track"><div class="bar-fill cyan" style="width:0%"></div></div><span class="bar-value">—</span></div></div></article>
         <article class="card span-12"><div class="card-header"><div><h2>Auditoria da classificação atual</h2><div class="card-sub">status permanece visível; os totais usam somente si_status</div></div><span class="source-tag">Fotografia atual</span></div><table><thead><tr><th>status informado</th><th>si_status classificador</th><th>Categoria do painel</th><th>Quantidade</th></tr></thead><tbody id="companies-status-audit"><tr><td colspan="4">Aguardando empresas.csv válido</td></tr></tbody></table></article>
       </div>
@@ -115,7 +116,7 @@
       <div class="section-grid numbers">
         <article class="card source-summary span-6" id="portal-screens-card"><div class="card-header"><div><h2>Portal · Lyra M2M</h2><div class="screen-source"><span class="status-dot"></span><span id="portal-source-state">Validando telas_portal.csv</span></div></div><span class="source-tag" id="portal-load-state">Aguardando carga</span></div><div class="compact-kpi"><div class="stat-top"><span>Visualizações totais do Portal</span><svg class="svg-icon" aria-hidden="true"><use href="#i-screen"/></svg></div><div class="big unavailable-value" id="portal-total-views">Indisponível</div><div class="compare"><span id="portal-total-evidence">Evidência pendente</span><span id="portal-per-screen-status">Detalhamento por tela indisponível</span></div></div><div class="source-summary-files"><div class="source-file-row"><strong>Fonte do Portal</strong><span id="portal-source-origin">Origem: indisponível</span><span id="portal-source-period">Abrangência: indisponível</span><span id="portal-source-partial">Sem arquivo válido</span></div><div class="source-file-row"><strong>Atualização</strong><span id="portal-source-generated">Geração: indisponível</span><span id="portal-source-observation">Limitação: indisponível</span><span id="portal-warning-state">Sem carga válida</span></div></div><div class="not-available"><div><svg class="svg-icon" aria-hidden="true"><use href="#i-alert"/></svg><strong>Visualizações por tela: Não validado</strong><div id="portal-limitations" aria-label="Limitações e metodologia do Portal"><p>Limitação informada no arquivo ainda indisponível.</p></div><p id="portal-methodology">Sessões associadas a URL e eventos screen_view_* não equivalem a Visualizações de Tela. O export geral do Clarity contém somente as 12 URLs principais; uma tela ausente não representa zero.</p></div></div></article>
         <article class="card span-6"><div class="card-header"><div><h2>Aplicativo · Lyra M2M</h2><div class="screen-source"><span class="status-dot"></span>Origem prevista do arquivo: Google Analytics</div></div><span class="source-tag">7.142 visualizações</span></div><div class="bars"><div class="bar-row"><span class="bar-label">Início</span><div class="bar-track"><div class="bar-fill cyan" style="width:100%"></div></div><span class="bar-value">2.210</span></div><div class="bar-row"><span class="bar-label">Linhas</span><div class="bar-track"><div class="bar-fill cyan" style="width:79%"></div></div><span class="bar-value">1.748</span></div><div class="bar-row"><span class="bar-label">Consumo</span><div class="bar-track"><div class="bar-fill cyan" style="width:63%"></div></div><span class="bar-value">1.386</span></div><div class="bar-row"><span class="bar-label">Faturas</span><div class="bar-track"><div class="bar-fill cyan" style="width:48%"></div></div><span class="bar-value">1.052</span></div><div class="bar-row"><span class="bar-label">Suporte</span><div class="bar-track"><div class="bar-fill cyan" style="width:34%"></div></div><span class="bar-value">746</span></div></div></article>
-        <div class="not-available span-6"><div><svg class="svg-icon" aria-hidden="true"><use href="#i-store"/></svg><strong>Loja · visualizações de tela</strong><p>A carga de Acessos da Loja ainda não foi implementada. Nenhum número é apresentado até a fonte contratada estar disponível.</p></div></div>
+        <div class="not-available span-6"><div><svg class="svg-icon" aria-hidden="true"><use href="#i-store"/></svg><strong>Loja · visualizações de tela</strong><p>A carga de Acessos da Loja não equivale a Visualizações de Tela. Nenhum número é apresentado até existir uma fonte contratada para telas.</p></div></div>
       </div>
     </section>
 
@@ -133,7 +134,7 @@
       <div class="dev-empty"><div><div class="illustration"><svg class="svg-icon" aria-hidden="true"><use href="#i-dev"/></svg></div><h2>Indicadores em definição</h2><p>Esta área não apresenta números fictícios porque entregas, qualidade e fluxo da equipe ainda precisam de critérios próprios. Ela será especificada depois da aprovação visual dos indicadores de produto.</p><div class="future-tags" aria-label="Temas futuros"><span>Entregas</span><span>Prazo médio</span><span>Qualidade</span><span>Bugs</span><span>Retrabalho</span></div></div></div>
     </section>
 
-    <div class="footer-note"><span><strong>Dados mistos</strong> · Usuários, Empresas e Portal vêm dos arquivos locais; as demais áreas ainda usam exemplos fictícios</span><span>Códigos como EMP-001 ocultam os nomes reais das empresas.</span></div>
+    <div class="footer-note"><span><strong>Dados mistos</strong> · Usuários, Acessos, Empresas e Portal vêm dos arquivos locais; as demais áreas ainda usam exemplos fictícios</span><span>Códigos como EMP-001 ocultam os nomes reais das empresas.</span></div>
   </main>
 
   <script>
@@ -149,16 +150,13 @@
       tab.addEventListener('click',()=>activate(tab,false));
       tab.addEventListener('keydown',event=>{let next=index;if(event.key==='ArrowRight')next=(index+1)%tabs.length;else if(event.key==='ArrowLeft')next=(index-1+tabs.length)%tabs.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;else return;event.preventDefault();activate(tabs[next])});
     });
-    const note=document.getElementById('filter-note');let noteTimer;
-    document.querySelectorAll('[data-demo-filter]').forEach(select=>select.addEventListener('change',()=>{clearTimeout(noteTimer);note.classList.add('show');noteTimer=setTimeout(()=>note.classList.remove('show'),3200)}));
-
     const numberFormatter=new Intl.NumberFormat('pt-BR');
     const monthFormatter=new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'});
     const dateFormatter=new Intl.DateTimeFormat('pt-BR',{timeZone:'UTC'});
     const sourceNames={mysql:'MySQL',google_analytics:'Google Analytics',microsoft_clarity:'Microsoft Clarity'};
-    const dataLoadState={users:'Usuários em validação',companies:'Empresas em validação',portal:'Portal em validação'};
+    const dataLoadState={users:'Usuários em validação',access:'Acessos em validação',companies:'Empresas em validação',portal:'Portal em validação'};
     function updateDataMode(){
-      document.getElementById('data-mode').lastChild.textContent=` Dados mistos · ${dataLoadState.users}; ${dataLoadState.companies}; ${dataLoadState.portal}; demais áreas fictícias`;
+      document.getElementById('data-mode').lastChild.textContent=` Dados mistos · ${dataLoadState.users}; ${dataLoadState.access}; ${dataLoadState.companies}; ${dataLoadState.portal}; demais áreas fictícias`;
     }
 
     function formatMonth(month){
@@ -281,6 +279,224 @@
         renderUnavailableUsers('Não foi possível ler a Pasta de Dados.');
       }
     }
+    const accessProducts=['Portal Web','Loja Web','Aplicativo','Loja Aplicativo'];
+    const periodSelect=document.getElementById('periodo');
+    const productSelect=document.getElementById('produto');
+    let accessPayload=null;
+    function setAccessValue(name,value){
+      const unavailable=value===null;
+      document.querySelectorAll(`[data-access-value="${name}"]`).forEach(element=>{
+        element.textContent=unavailable?'Indisponível':numberFormatter.format(value);
+        element.classList.toggle('unavailable-value',unavailable);
+      });
+    }
+    function setAccessSource(prefix,source){
+      const origin=document.getElementById(`${prefix}-source-origin`);
+      const period=document.getElementById(`${prefix}-source-period`);
+      if(!source){
+        origin.textContent='Origem: indisponível';
+        period.textContent='Abrangência: indisponível';
+        return;
+      }
+      origin.textContent=`Origem: ${sourceNames[source.origin]??source.origin} · Estado: ${source.state}`;
+      period.textContent=`Abrangência: ${formatDate(source.periodStart)} a ${formatDate(source.periodEnd)}`;
+    }
+    function setRankingCardSource(source,state){
+      const origin=document.getElementById('access-ranking-source-origin');
+      const period=document.getElementById('access-ranking-source-period');
+      if(!source){
+        origin.textContent='Origem: indisponível';
+        period.textContent='Abrangência: indisponível';
+      }else{
+        origin.textContent=`Origem: ${sourceNames[source.origin]??source.origin} · Estado: ${source.state}`;
+        period.textContent=`Abrangência: ${formatDate(source.periodStart)} a ${formatDate(source.periodEnd)}`;
+      }
+      document.getElementById('access-ranking-source-state').textContent=state;
+    }
+    function isMissingSourceWarning(warning){return warning?.includes('arquivo ausente')||warning?.includes('fonte não atualizada')}
+    function accessWarningFor(fileName){return accessPayload?.warnings.find(warning=>warning.includes(fileName))??null}
+    function appendAccessNotice(title,detail){
+      const notice=document.createElement('div');
+      notice.className='attention';
+      const icon=document.createElement('div');
+      icon.className='attention-icon warn';
+      icon.innerHTML='<svg class="svg-icon" aria-hidden="true"><use href="#i-alert"/></svg>';
+      const copy=document.createElement('div');
+      const strong=document.createElement('strong');
+      strong.textContent=title;
+      const small=document.createElement('small');
+      small.textContent=detail;
+      copy.append(strong,small);
+      const value=document.createElement('span');
+      value.className='attention-value';
+      value.textContent='Sem zero presumido';
+      notice.append(icon,copy,value);
+      document.getElementById('access-notices').append(notice);
+    }
+    function availableMonths(){
+      return [...new Set(accessPayload.indicators.combinations.map(item=>item.month))].sort((left,right)=>right.localeCompare(left));
+    }
+    function combinationsForMonth(month){
+      return accessPayload.indicators.combinations
+        .filter(item=>item.month===month)
+        .sort((left,right)=>accessProducts.indexOf(left.product)-accessProducts.indexOf(right.product));
+    }
+    function syncProductOptions(){
+      const previous=productSelect.value;
+      const combinations=combinationsForMonth(periodSelect.value);
+      productSelect.replaceChildren(...combinations.map(item=>{
+        const option=document.createElement('option');
+        option.value=item.product;
+        option.textContent=item.product;
+        return option;
+      }));
+      productSelect.value=combinations.some(item=>item.product===previous)?previous:(combinations[0]?.product??'');
+      productSelect.disabled=combinations.length===0;
+    }
+    function configureAccessFilters(){
+      const months=availableMonths();
+      periodSelect.replaceChildren(...months.map(month=>{
+        const option=document.createElement('option');
+        option.value=month;
+        option.textContent=formatMonth(month);
+        return option;
+      }));
+      periodSelect.disabled=months.length===0;
+      periodSelect.value=months[0]??'';
+      syncProductOptions();
+    }
+    function renderAccessRanking(month,product,coverage){
+      const body=document.getElementById('access-ranking-body');
+      body.replaceChildren();
+      const items=accessPayload.ranking.filter(item=>item.month===month&&item.product===product)
+        .sort((left,right)=>left.position-right.position);
+      document.getElementById('access-ranking-period').textContent=`Ranking de ${formatMonth(month).toLocaleLowerCase('pt-BR')} · ${product}`;
+      document.getElementById('access-ranking-coverage').textContent=coverage==='partial'?'Ranking com cobertura parcial':'Ranking com dados prontos';
+      if(items.length===0){
+        const row=document.createElement('tr');
+        const cell=document.createElement('td');
+        cell.colSpan=4;
+        cell.textContent='Ranking não informado para esta combinação.';
+        row.append(cell);
+        body.append(row);
+        return;
+      }
+      items.forEach(item=>{
+        const row=document.createElement('tr');
+        const position=document.createElement('td');
+        const rank=document.createElement('span');
+        rank.className='rank';
+        rank.textContent=String(item.position);
+        position.append(rank);
+        const company=document.createElement('td');
+        const companyCell=document.createElement('div');
+        companyCell.className='company-cell';
+        companyCell.textContent=item.companyId;
+        company.append(companyCell);
+        const logins=document.createElement('td');
+        logins.textContent=numberFormatter.format(item.totalLogins);
+        const users=document.createElement('td');
+        users.textContent=numberFormatter.format(item.uniqueUsers);
+        row.append(position,company,logins,users);
+        body.append(row);
+      });
+    }
+    function renderAccessSelection(){
+      if(!accessPayload||periodSelect.disabled||productSelect.disabled){
+        ['total-logins','unique-users','distinct-companies','overview-logins'].forEach(name=>setAccessValue(name,null));
+        document.querySelectorAll('[data-access-value="overview-caption"]').forEach(element=>{element.textContent='Aguardando acessos.csv'});
+        document.getElementById('access-overview-coverage').textContent='Sem carga válida';
+        return;
+      }
+      const month=periodSelect.value;
+      const product=productSelect.value;
+      const selected=accessPayload.indicators.combinations.find(item=>item.month===month&&item.product===product);
+      if(!selected){
+        ['total-logins','unique-users','distinct-companies','overview-logins'].forEach(name=>setAccessValue(name,null));
+        return;
+      }
+      setAccessValue('total-logins',selected.totalLogins);
+      setAccessValue('unique-users',selected.uniqueUsers);
+      setAccessValue('distinct-companies',selected.distinctCompanies);
+      setAccessValue('overview-logins',selected.totalLogins);
+      document.querySelectorAll('[data-access-value="overview-caption"]').forEach(element=>{
+        element.textContent=`${numberFormatter.format(selected.uniqueUsers)} usuários únicos · ${product} · ${formatMonth(month)}`;
+      });
+      const coverageLabel=selected.coverage==='partial'?'Cobertura parcial':'Dados prontos';
+      document.getElementById('access-coverage').textContent=coverageLabel;
+      document.getElementById('access-overview-coverage').textContent=coverageLabel;
+      document.getElementById('overview-access-source').textContent=`${product} · ${formatMonth(month)}`;
+      document.getElementById('access-selection-label').textContent=`${formatMonth(month)} · ${product}`;
+      document.getElementById('access-unique-state').textContent=selected.totalLogins===0?'Zero informado':'Valor informado';
+      document.getElementById('access-company-state').textContent=selected.totalLogins===0?'Zero informado':'Valor informado';
+      const missing=accessProducts.filter(candidate=>!combinationsForMonth(month).some(item=>item.product===candidate));
+      const notices=document.getElementById('access-notices');
+      notices.replaceChildren();
+      if(missing.length>0){
+        const names=missing.length===1?missing[0]:`${missing.slice(0,-1).join(', ')} e ${missing.at(-1)}`;
+        appendAccessNotice(`${names}: não informado neste período.`,'Somente Produtos Digitais com uma linha válida aparecem no filtro.');
+      }
+      if(selected.coverage==='partial'){
+        appendAccessNotice('Cobertura parcial','A instrumentação deste Produto Digital ainda precisa de validação adicional.');
+      }
+      renderAccessRanking(month,product,selected.coverage);
+    }
+    function renderLoadedAccesses(payload){
+      accessPayload=payload;
+      const accessWarning=accessWarningFor('acessos.csv');
+      const rankingWarning=accessWarningFor('ranking_acessos.csv');
+      const hasAccess=payload.indicators.combinations.length>0;
+      dataLoadState.access=payload.status==='ready'?'Acessos carregados':hasAccess?'Últimos dados válidos de Acessos preservados':'Acessos indisponíveis';
+      updateDataMode();
+      document.getElementById('access-source-state').textContent=accessWarning?'Última carga válida de acessos preservada':'Arquivos de Acessos validados';
+      document.getElementById('access-source-message').textContent=payload.warnings.length>0?'Uma fonte não foi atualizada; cada último conjunto válido continua ativo de forma independente.':'Filtros limitados às combinações válidas informadas nos arquivos.';
+      document.getElementById('access-load-state').textContent=accessWarning?(isMissingSourceWarning(accessWarning)?'Fonte de acessos não atualizada':'Última carga válida preservada'):'Fonte validada';
+      document.getElementById('ranking-load-state').textContent=rankingWarning?(isMissingSourceWarning(rankingWarning)?'Fonte do ranking não atualizada':'Última carga válida preservada'):'Fonte validada';
+      setAccessSource('access',payload.source);
+      setAccessSource('ranking',payload.rankingSource);
+      const rankingState=rankingWarning?(isMissingSourceWarning(rankingWarning)?'Fonte do ranking não atualizada':'Última carga válida preservada'):'Fonte validada';
+      setRankingCardSource(payload.rankingSource,rankingState);
+      if(!hasAccess){
+        renderUnavailableAccesses(payload.warnings[0]??'acessos.csv não possui carga válida.',payload);
+        return;
+      }
+      configureAccessFilters();
+      renderAccessSelection();
+    }
+    function renderUnavailableAccesses(message,payload=null){
+      accessPayload=null;
+      dataLoadState.access='Acessos indisponíveis';
+      updateDataMode();
+      document.getElementById('access-source-state').textContent='Arquivos de Acessos indisponíveis';
+      document.getElementById('access-source-message').textContent=message;
+      document.getElementById('access-load-state').textContent='Sem arquivo válido';
+      const rankingAvailable=Boolean(payload?.rankingSource);
+      document.getElementById('ranking-load-state').textContent=rankingAvailable?'Fonte validada':'Sem arquivo válido';
+      setAccessSource('access',payload?.source??null);
+      setAccessSource('ranking',payload?.rankingSource??null);
+      setRankingCardSource(payload?.rankingSource??null,rankingAvailable?'Fonte validada':'Sem arquivo válido');
+      periodSelect.replaceChildren(new Option('Períodos indisponíveis',''));
+      productSelect.replaceChildren(new Option('Produtos indisponíveis',''));
+      periodSelect.disabled=true;
+      productSelect.disabled=true;
+      renderAccessSelection();
+    }
+    async function loadAccesses(){
+      try{
+        const response=await fetch('/api/acessos',{cache:'no-store'});
+        const payload=await response.json();
+        if(!response.ok||payload.status==='unavailable'){
+          renderUnavailableAccesses(payload.errors?.[0]??payload.warnings?.[0]??'A carga não pôde ser validada.');
+          return;
+        }
+        renderLoadedAccesses(payload);
+      }catch{
+        renderUnavailableAccesses('Não foi possível ler acessos.csv e ranking_acessos.csv.');
+      }
+    }
+    periodSelect.addEventListener('change',()=>{if(!accessPayload)return;syncProductOptions();renderAccessSelection()});
+    productSelect.addEventListener('change',renderAccessSelection);
+
     function setCompanyValue(name,value){
       const unavailable=value===null;
       document.querySelectorAll(`[data-company-value="${name}"]`).forEach(element=>{
@@ -476,6 +692,7 @@
       }
     }
     loadUsers();
+    loadAccesses();
     loadCompanies();
     loadPortal();
   </script>

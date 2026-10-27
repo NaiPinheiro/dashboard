@@ -3,6 +3,7 @@ import {
   assertDate,
   assertEmpty,
   assertMonth,
+  assertMonthInsideSource,
   assertOpaqueIdentifier,
   isOpaqueIdentifierSafe,
   loadDataSet,
@@ -33,20 +34,6 @@ const INACTIVITY_HEADERS = [
 
 export { DataContractError };
 
-function monthBounds(month) {
-  const [year, monthNumber] = month.split('-').map(Number);
-  const start = `${month}-01`;
-  const end = new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10);
-  return { start, end };
-}
-
-function assertMonthInsidePeriod(month, source, fileName) {
-  const bounds = monthBounds(month);
-  if (bounds.start < source.periodStart || bounds.end > source.periodEnd) {
-    throw new DataContractError(`${fileName}: o mês ${month} está fora do período declarado no manifesto.`);
-  }
-}
-
 function assertDateInsidePeriod(date, source, fileName) {
   if (date < source.periodStart || date > source.periodEnd) {
     throw new DataContractError(`${fileName}: a data de referência está fora do período declarado no manifesto.`);
@@ -55,8 +42,8 @@ function assertDateInsidePeriod(date, source, fileName) {
 
 function validatePartPeriod(name, data, source) {
   if (name === 'usuarios') {
-    assertMonthInsidePeriod(data.currentMonth, source, 'usuarios.csv');
-    if (data.previousNewUsers !== null) assertMonthInsidePeriod(data.previousMonth, source, 'usuarios.csv');
+    assertMonthInsideSource(data.currentMonth, source, 'usuarios.csv');
+    if (data.previousNewUsers !== null) assertMonthInsideSource(data.previousMonth, source, 'usuarios.csv');
     return;
   }
   assertDateInsidePeriod(data.referenceDate, source, 'usuarios_inatividade.csv');

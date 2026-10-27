@@ -3,3 +3,5 @@ versao_contrato;arquivo;gerado_em;periodo_inicio;periodo_fim;periodo_parcial;fon
 1.0;usuarios_inatividade.csv;2026-09-30T23:59:00-03:00;2026-09-01;2026-09-30;false;mysql;pronto;Fotografia fictícia de teste
 1.0;telas_portal.csv;2026-09-30T23:59:00-03:00;2026-08-01;2026-09-30;true;microsoft_clarity;parcial;Export sintético limitado às 12 URLs principais
 1.0;empresas.csv;2026-09-30T23:59:00-03:00;2026-09-30;2026-09-30;false;mysql;pronto;Fotografia sintética da situação atual
+1.0;acessos.csv;2026-09-30T23:59:00-03:00;2026-08-01;2026-09-30;false;mysql;pronto;Agregados sintéticos por mês e Produto Digital
+1.0;ranking_acessos.csv;2026-09-30T23:59:00-03:00;2026-08-01;2026-09-30;false;mysql;pronto;Ranking sintético com empresas anônimas
