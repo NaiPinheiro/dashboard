@@ -120,8 +120,8 @@ test('uma tentativa inválida preserva a última carga válida de Usuários', as
 
   const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
   await navigation.getByRole('tab', { name: 'Usuários e Acessos', exact: true }).click();
-  await expect(page.getByText('Última carga válida preservada')).toBeVisible();
   const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
+  await expect(usersPanel.getByText('Última carga válida preservada')).toBeVisible();
   await expect(usersPanel.getByText('410', { exact: true })).toBeVisible();
   await expect(usersPanel.getByText('999', { exact: true })).toHaveCount(0);
   await expect(usersPanel.getByText('pessoa@example.com', { exact: true })).toHaveCount(0);
@@ -1110,6 +1110,84 @@ test.describe('Issue #8 · consolidação da Visão geral', () => {
     await expect(overview.locator('[data-user-value="current-total"]')).toHaveText('410');
     await expect(overview.locator('[data-access-value="overview-logins"]')).toHaveText('1.200');
     await expect(overview.locator('[data-overview-value="portal-views"]')).toHaveText('12.480');
+    await expect(overview.locator('[data-overview-value="application-views"]')).toHaveText('7.142');
+  });
+});
+
+
+test.describe('Issue #8 · fonte de inatividade na Visão geral', () => {
+  const inactivityRow = (overview) => overview.locator('[data-overview-source="inactivity"]');
+
+  test('arquivo de inatividade ausente preserva cache e mostra fonte não atualizada isoladamente', async ({ page }) => {
+    await page.goto('/painel.html');
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-user-value="inactive-30"]')).toHaveText('64');
+
+    await rm(resolve(testDataPath, 'usuarios_inatividade.csv'));
+    await page.reload();
+
+    await expect(overview.locator('[data-user-value="inactive-30"]')).toHaveText('64');
+    await expect(inactivityRow(overview)).toContainText('Sem login há 30 dias');
+    await expect(inactivityRow(overview)).toContainText('MySQL · pronto');
+    await expect(inactivityRow(overview)).toContainText('01/09/2026 a 30/09/2026');
+    await expect(inactivityRow(overview)).toContainText('Fonte não atualizada');
+    await expect(overview.locator('[data-overview-source="users"]')).toContainText('Fonte validada');
+    await expect(overview.locator('[data-access-value="overview-logins"]')).toHaveText('1.200');
+  });
+
+  test('arquivo de inatividade inválido preserva cache e informa a última carga válida isoladamente', async ({ page }) => {
+    await page.goto('/painel.html');
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-user-value="inactive-30"]')).toHaveText('64');
+
+    await writeFile(
+      resolve(testDataPath, 'usuarios_inatividade.csv'),
+      'data_referencia;usuarios_sem_login_30_dias;usuarios_ativos_no_cadastro_sem_login_30_dias;usuarios_nao_ativos_no_cadastro_sem_login_30_dias\n' +
+        '2026-09-31;999;900;99\n',
+      'utf8',
+    );
+    await page.reload();
+
+    await expect(overview.locator('[data-user-value="inactive-30"]')).toHaveText('64');
+    await expect(overview.locator('[data-user-value="inactive-30"]')).not.toHaveText('999');
+    await expect(inactivityRow(overview)).toContainText('MySQL · pronto');
+    await expect(inactivityRow(overview)).toContainText('01/09/2026 a 30/09/2026');
+    await expect(inactivityRow(overview)).toContainText('Última carga válida preservada');
+    await expect(overview.locator('[data-overview-source="users"]')).toContainText('Fonte validada');
+    await expect(overview.locator('[data-overview-value="inactive-companies"]')).toHaveText('8');
+  });
+
+  test('arquivo de inatividade ausente sem cache deixa somente a inatividade indisponível', async ({ page }) => {
+    await rm(resolve(testDataPath, 'usuarios_inatividade.csv'));
+    await page.goto('/painel.html');
+
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-user-value="inactive-30"]')).toHaveText('Indisponível');
+    await expect(overview.locator('[data-user-value="inactive-30"]')).not.toHaveText('0');
+    await expect(inactivityRow(overview)).toContainText('Origem indisponível');
+    await expect(inactivityRow(overview)).toContainText('Referência indisponível');
+    await expect(inactivityRow(overview)).toContainText('Sem arquivo válido');
+    await expect(overview.locator('[data-user-value="current-total"]')).toHaveText('410');
+    await expect(overview.locator('[data-overview-source="users"]')).toContainText('Fonte validada');
+    await expect(overview.locator('[data-overview-value="portal-views"]')).toHaveText('12.480');
+  });
+
+  test('arquivo de inatividade inválido sem cache deixa somente a inatividade indisponível', async ({ page }) => {
+    await writeFile(
+      resolve(testDataPath, 'usuarios_inatividade.csv'),
+      'data_referencia;usuarios_sem_login_30_dias;usuarios_ativos_no_cadastro_sem_login_30_dias;usuarios_nao_ativos_no_cadastro_sem_login_30_dias\n' +
+        '2026-09-31;0;0;0\n',
+      'utf8',
+    );
+    await page.goto('/painel.html');
+
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-user-value="inactive-30"]')).toHaveText('Indisponível');
+    await expect(inactivityRow(overview)).toContainText('Origem indisponível');
+    await expect(inactivityRow(overview)).toContainText('Referência indisponível');
+    await expect(inactivityRow(overview)).toContainText('Sem arquivo válido');
+    await expect(overview.locator('[data-user-value="current-total"]')).toHaveText('410');
+    await expect(overview.locator('[data-overview-source="users"]')).toContainText('Fonte validada');
     await expect(overview.locator('[data-overview-value="application-views"]')).toHaveText('7.142');
   });
 });
