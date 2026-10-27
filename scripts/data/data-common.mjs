@@ -300,6 +300,9 @@ export async function loadDataSet({ cacheDir, fileName, loader, manifest, name, 
     if (entry.estado_fonte === 'indisponivel') throw new DataContractError(`${fileName}: fonte marcada como indisponível.`);
     const source = sourceFromManifest(entry);
     const data = await loader(source);
+    if (!isValidData(data)) {
+      throw new DataContractError(`${fileName}: dados carregados falharam na validação integral.`);
+    }
     validatePeriod?.(data, source);
     await writeCache(cacheDir, name, data, source);
     return { cache: { data, source }, warning: null, rejection: null };

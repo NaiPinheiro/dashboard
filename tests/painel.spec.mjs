@@ -1,4 +1,4 @@
-import { cp, mkdir, rename, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 
@@ -905,6 +905,71 @@ test.describe('Issue #7 · Telas do Aplicativo e evidências do Google Analytics
     await expect(page.getByRole('tabpanel', { name: 'Usuários e Acessos' }).getByText('930', { exact: true })).toHaveCount(0);
     const privateFileResponse = await page.request.get('/tests/fixtures/carga-usuarios-valida/telas_aplicativo.csv');
     expect(privateFileResponse.status()).toBe(404);
+  });
+
+  test('mantém a coluna final dos metadados legível em 1366px', async ({ page }) => {
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await page.goto('/painel.html');
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Telas', exact: true })
+      .click();
+
+    const layout = await page.locator('#application-screens-card').evaluate((card) => {
+      const rows = [...card.querySelectorAll('.source-file-row')];
+      return rows.map((row) => {
+        const rowRect = row.getBoundingClientRect();
+        const cells = [...row.children].map((cell) => cell.getBoundingClientRect());
+        return {
+          columns: getComputedStyle(row).gridTemplateColumns.split(' ').length,
+          finalColumnWidth: cells.at(-1).width,
+          contained: cells.every((cell) => cell.right <= rowRect.right + 1),
+        };
+      });
+    });
+
+    expect(layout).toHaveLength(3);
+    expect(layout.every((row) => row.columns === 2)).toBe(true);
+    expect(layout.every((row) => row.finalColumnWidth >= 200)).toBe(true);
+    expect(layout.every((row) => row.contained)).toBe(true);
+  });
+
+  test('rejeita PII em unidade_contagem sem substituir o cache válido', async ({ page }) => {
+    await page.goto('/painel.html');
+
+    const validResponse = await page.request.get('/api/telas-aplicativo');
+    const validPayload = await validResponse.json();
+    expect(validPayload.status).toBe('ready');
+    expect(validPayload.indicators.totalViews).toBe(7142);
+
+    await writeFile(
+      resolve(testDataPath, 'telas_aplicativo.csv'),
+      'periodo;produto;fonte;propriedade;property_id;tipo_registro;item;contagem;usuarios;unidade_contagem;metrica_usuarios;evidencia;observacao\n' +
+        '2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;total_telas;Total;99999;;pessoa@example.com;;observado;Tentativa sintética recusada\n',
+      'utf8',
+    );
+
+    const rejectedResponse = await page.request.get('/api/telas-aplicativo');
+    const rejectedPayload = await rejectedResponse.json();
+    expect(rejectedPayload.status).toBe('stale');
+    expect(rejectedPayload.indicators.totalViews).toBe(7142);
+    expect(rejectedPayload.rejection).toMatchObject({
+      file: 'telas_aplicativo.csv',
+      reasons: ['telas_aplicativo.csv: conteúdo contém PII conhecida na linha 2.'],
+    });
+    expect(rejectedPayload.rejection.attemptedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(JSON.stringify(rejectedPayload)).not.toContain('pessoa@example.com');
+
+    const cacheText = await readFile(resolve(testCachePath, 'telas_aplicativo.json'), 'utf8');
+    const rejectionLog = await readFile(resolve(testCachePath, 'validation-rejections.jsonl'), 'utf8');
+    expect(cacheText).not.toContain('pessoa@example.com');
+    expect(rejectionLog).not.toContain('pessoa@example.com');
+
+    await rm(resolve(testDataPath, 'telas_aplicativo.csv'));
+    const missingResponse = await page.request.get('/api/telas-aplicativo');
+    const missingPayload = await missingResponse.json();
+    expect(missingPayload.status).toBe('stale');
+    expect(missingPayload.indicators.totalViews).toBe(7142);
+    expect(JSON.stringify(missingPayload)).not.toContain('pessoa@example.com');
   });
 
   test('rejeita total não observado e preserva o cache sem registrar conteúdo da linha', async ({ page }) => {

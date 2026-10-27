@@ -63,7 +63,7 @@ function recordFromRow(row, period, rowNumber) {
   if (!EVIDENCE.has(row.evidencia)) {
     throw new DataContractError(`${FILE_NAME}: evidência inválida na linha ${rowNumber}.`);
   }
-  if (containsKnownPii(`${row.propriedade} ${row.item} ${row.metrica_usuarios} ${row.observacao}`)) {
+  if (containsKnownPii(`${row.propriedade} ${row.item} ${row.unidade_contagem} ${row.metrica_usuarios} ${row.observacao}`)) {
     throw new DataContractError(`${FILE_NAME}: conteúdo contém PII conhecida na linha ${rowNumber}.`);
   }
 
