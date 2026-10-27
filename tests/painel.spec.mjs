@@ -31,7 +31,7 @@ test('a gerente percorre as seis áreas do MVP do Painel', async ({ page }) => {
 
   await expect(page).toHaveTitle(/Painel de Indicadores/);
   await expect(
-    page.getByText('Dados mistos · Usuários carregados; Acessos carregados; Empresas carregadas; Portal carregado; demais áreas fictícias'),
+    page.getByText('Dados mistos · 5 fontes disponíveis; lacunas sinalizadas'),
   ).toBeVisible();
 
   const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
@@ -107,7 +107,7 @@ test('a gerente vê os indicadores de Usuários vindos de uma carga válida', as
 
 test('uma tentativa inválida preserva a última carga válida de Usuários', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; Acessos carregados; Empresas carregadas; Portal carregado; demais áreas fictícias')).toBeVisible();
+  await expect(page.getByText('Dados mistos · 5 fontes disponíveis; lacunas sinalizadas')).toBeVisible();
 
   await writeFile(
     resolve(testDataPath, 'usuarios.csv'),
@@ -166,7 +166,7 @@ test('sem cache anterior, somente o conjunto inválido aparece como Indisponíve
 
 test('o contrato rejeita duplicidade, total negativo, PII e período inválido sem perder a carga ativa', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; Acessos carregados; Empresas carregadas; Portal carregado; demais áreas fictícias')).toBeVisible();
+  await expect(page.getByText('Dados mistos · 5 fontes disponíveis; lacunas sinalizadas')).toBeVisible();
 
   const invalidAttempts = [
     {
@@ -221,7 +221,7 @@ test('o contrato rejeita duplicidade, total negativo, PII e período inválido s
     await navigation.getByRole('tab', { name: 'Usuários e Acessos', exact: true }).click();
     const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
     const totalCard = usersPanel.locator('article').filter({ hasText: 'Total existente' });
-    await expect(usersPanel.getByText('Última carga válida preservada')).toBeVisible();
+    await expect(usersPanel.locator('#users-source-state')).toHaveText('Última carga válida preservada');
     await expect(totalCard.getByText('410', { exact: true })).toBeVisible();
   }
 });
@@ -241,7 +241,7 @@ test('sem JavaScript, indicadores funcionais não exibem valores fictícios', as
 
 test('um backup íntegro recupera a última carga quando a troca do cache é interrompida', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; Acessos carregados; Empresas carregadas; Portal carregado; demais áreas fictícias')).toBeVisible();
+  await expect(page.getByText('Dados mistos · 5 fontes disponíveis; lacunas sinalizadas')).toBeVisible();
 
   const userCache = resolve(testCachePath, 'usuarios.json');
   const userBackup = resolve(testCachePath, 'usuarios.json.bak');
@@ -851,4 +851,131 @@ test.describe('Issue #6 · Acessos e ranking', () => {
     await expect(overview.getByText('Sem período anterior comparável', { exact: true })).toBeVisible();
   });
 
+});
+
+
+test.describe('Issue #7 · Telas do Aplicativo e evidências do Google Analytics', () => {
+  test('mostra somente o total observado e mantém classes técnicas e eventos como evidências distintas', async ({ page }) => {
+    await page.goto('/painel.html');
+
+    const response = await page.request.get('/api/telas-aplicativo');
+    expect(response.status()).toBe(200);
+    const payload = await response.json();
+    expect(payload).toMatchObject({
+      status: 'ready',
+      indicators: {
+        property: { name: 'App M2M sintético', id: 'GA-PROP-TEST-01' },
+        totalViews: 7142,
+        totalEvidence: 'observado',
+        technicalClasses: [
+          { item: 'HomeActivity', count: 2210, evidence: 'observado' },
+          { item: 'LinesFragment', count: 1748, evidence: 'derivado' },
+        ],
+        eventTotals: [
+          { item: 'Total de eventos', count: 9650, users: 1204, evidence: 'observado' },
+        ],
+        events: [
+          { item: 'login', count: 930, users: 284, evidence: 'nao_validado', accessEligible: false },
+          { item: 'invoice_open', count: 612, users: 191, evidence: 'observado', accessEligible: false },
+        ],
+      },
+    });
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Telas', exact: true })
+      .click();
+    const applicationCard = page.locator('#application-screens-card');
+    await expect(applicationCard.getByText('7.142', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Total observado', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Total de eventos: 9.650 · Observado', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('HomeActivity', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('LinesFragment', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Classe técnica · Observado', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Classe técnica · Derivado', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('login', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Evento · Não validado', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('O evento login não substitui Acesso', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Origem: Google Analytics · Estado: pronto', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Abrangência: 01/08/2026 a 30/09/2026', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Propriedade: App M2M sintético · ID: GA-PROP-TEST-01', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Período completo', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Gerado em:', { exact: false })).toBeVisible();
+    await expect(applicationCard.getByText('Observação: Export sintético com classes técnicas e eventos funcionais', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Contrato: 1.0', { exact: true })).toBeVisible();
+    await expect(page.getByRole('tabpanel', { name: 'Usuários e Acessos' }).getByText('930', { exact: true })).toHaveCount(0);
+    const privateFileResponse = await page.request.get('/tests/fixtures/carga-usuarios-valida/telas_aplicativo.csv');
+    expect(privateFileResponse.status()).toBe(404);
+  });
+
+  test('rejeita total não observado e preserva o cache sem registrar conteúdo da linha', async ({ page }) => {
+    await page.goto('/painel.html');
+    await writeFile(
+      resolve(testDataPath, 'telas_aplicativo.csv'),
+      'periodo;produto;fonte;propriedade;property_id;tipo_registro;item;contagem;usuarios;unidade_contagem;metrica_usuarios;evidencia;observacao\n' +
+        '2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;total_telas;Total;99999;;visualizacoes;;derivado;Tentativa sintética recusada\n',
+      'utf8',
+    );
+
+    const response = await page.request.get('/api/telas-aplicativo');
+    const payload = await response.json();
+    expect(payload.status).toBe('stale');
+    expect(payload.indicators.totalViews).toBe(7142);
+    expect(payload.rejection).toMatchObject({ file: 'telas_aplicativo.csv' });
+    expect(payload.rejection.attemptedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(payload.rejection.reasons).toEqual([
+      'telas_aplicativo.csv: total_telas deve ter contagem observada na linha 2.',
+    ]);
+    expect(JSON.stringify(payload.rejection)).not.toContain('99999');
+    expect(JSON.stringify(payload.rejection)).not.toContain('Tentativa sintética recusada');
+
+    await page.reload();
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Telas', exact: true })
+      .click();
+    const applicationCard = page.locator('#application-screens-card');
+    await expect(applicationCard.getByText('Última carga válida preservada', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('7.142', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('99.999', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Tentativa sintética recusada', { exact: false })).toHaveCount(0);
+  });
+
+  test('arquivo ausente preserva o cache e avisa que a fonte não foi atualizada', async ({ page }) => {
+    await page.goto('/painel.html');
+    await rm(resolve(testDataPath, 'telas_aplicativo.csv'));
+
+    await page.reload();
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Telas', exact: true })
+      .click();
+    const applicationCard = page.locator('#application-screens-card');
+    await expect(applicationCard.getByText('Fonte não atualizada', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('7.142', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('O evento login não substitui Acesso', { exact: true })).toBeVisible();
+  });
+
+  test('sem cache, arquivo inválido deixa telas do Aplicativo indisponíveis e nunca vira zero', async ({ page }) => {
+    await writeFile(
+      resolve(testDataPath, 'telas_aplicativo.csv'),
+      'periodo;produto;fonte;propriedade;property_id;tipo_registro;item;contagem;usuarios;unidade_contagem;metrica_usuarios;evidencia;observacao\n' +
+        '2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;classe_tela;HomeActivity;0;;visualizacoes;;observado;Classe técnica\n',
+      'utf8',
+    );
+
+    await page.goto('/painel.html');
+    const response = await page.request.get('/api/telas-aplicativo');
+    const payload = await response.json();
+    expect(payload.status).toBe('unavailable');
+    expect(payload.indicators.totalViews).toBeNull();
+    expect(payload.indicators.technicalClasses).toEqual([]);
+    expect(payload.indicators.events).toEqual([]);
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Telas', exact: true })
+      .click();
+    const applicationCard = page.locator('#application-screens-card');
+    await expect(applicationCard.locator('#application-total-views')).toHaveText('Indisponível');
+    await expect(applicationCard.getByText('0', { exact: true })).toHaveCount(0);
+    await expect(applicationCard.getByText('Sem classes técnicas validadas', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Sem eventos funcionais validados', { exact: true })).toBeVisible();
+  });
 });

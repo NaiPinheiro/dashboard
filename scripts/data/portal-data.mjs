@@ -3,6 +3,7 @@ import {
   containsKnownPii,
   loadDataSet,
   loadManifest,
+  parseAnalysisPeriod,
   readCache,
   readCsv,
   recordRejection,
@@ -23,30 +24,6 @@ const PORTAL_HEADERS = [
   'observacao',
 ];
 const EVIDENCE = new Set(['observado', 'derivado', 'nao_validado']);
-
-function parsePeriod(value, rowNumber) {
-  const full = /^(\d{4}-\d{2}-\d{2}) a (\d{4}-\d{2}-\d{2})$/.exec(value);
-  const monthly = /^(\d{4}-(?:0[1-9]|1[0-2])) a (\d{4}-(?:0[1-9]|1[0-2]))$/.exec(value);
-  if (!full && !monthly) throw new DataContractError(`${FILE_NAME}: período inválido na linha ${rowNumber}.`);
-
-  if (full) {
-    const [, start, end] = full;
-    const validStart = new Date(`${start}T00:00:00Z`);
-    const validEnd = new Date(`${end}T00:00:00Z`);
-    if (Number.isNaN(validStart.valueOf()) || validStart.toISOString().slice(0, 10) !== start
-      || Number.isNaN(validEnd.valueOf()) || validEnd.toISOString().slice(0, 10) !== end || end < start) {
-      throw new DataContractError(`${FILE_NAME}: período inválido na linha ${rowNumber}.`);
-    }
-    return { start, end };
-  }
-
-  const [, startMonth, endMonth] = monthly;
-  const [endYear, endMonthNumber] = endMonth.split('-').map(Number);
-  const start = `${startMonth}-01`;
-  const end = new Date(Date.UTC(endYear, endMonthNumber, 0)).toISOString().slice(0, 10);
-  if (end < start) throw new DataContractError(`${FILE_NAME}: período invertido na linha ${rowNumber}.`);
-  return { start, end };
-}
 
 function parseOptionalNumber(value, field, rowNumber) {
   if (value === '' || value === '\\N') return null;
@@ -85,7 +62,7 @@ async function loadPortalRows(dataDir, source) {
 
   rows.forEach((row, index) => {
     const rowNumber = index + 2;
-    const period = parsePeriod(row.periodo, rowNumber);
+    const period = parseAnalysisPeriod(row.periodo, FILE_NAME, rowNumber, { allowMonthly: true });
     if (period.start < source.periodStart || period.end > source.periodEnd) {
       throw new DataContractError(`${FILE_NAME}: período da linha ${rowNumber} está fora da abrangência do manifesto.`);
     }

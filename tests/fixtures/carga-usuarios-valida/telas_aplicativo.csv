@@ -1,0 +1,7 @@
+periodo;produto;fonte;propriedade;property_id;tipo_registro;item;contagem;usuarios;unidade_contagem;metrica_usuarios;evidencia;observacao
+2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;total_telas;Visualizações totais;7142;;visualizacoes;;observado;Total observado no agregado sintético
+2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;classe_tela;HomeActivity;2210;840;visualizacoes;usuarios_ativos;observado;Nome técnico preservado sem tradução funcional
+2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;classe_tela;LinesFragment;1748;702;visualizacoes;usuarios_ativos;derivado;Agrupamento técnico derivado no export sintético
+2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;total_eventos;Total de eventos;9650;1204;eventos;usuarios_ativos;observado;Eventos não equivalem a Visualizações de Tela
+2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;evento;login;930;284;eventos;usuarios_ativos;nao_validado;Semântica de login concluído ainda não validada
+2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;evento;invoice_open;612;191;eventos;usuarios_ativos;observado;Evento funcional não convertido em visualização
