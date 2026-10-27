@@ -23,7 +23,7 @@
     .dev-empty{min-height:460px;display:grid;place-items:center;text-align:center;background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:40px}.dev-empty .illustration{width:90px;height:90px;border-radius:24px;background:var(--soft);color:var(--blue);display:grid;place-items:center;margin:0 auto 20px}.dev-empty .svg-icon{width:42px;height:42px}.dev-empty h2{font-size:24px;color:var(--navy);margin:0}.dev-empty p{max-width:57ch;color:var(--muted);margin:10px auto 0}.future-tags{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:20px}.future-tags span{border:1px solid var(--line);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:11px;background:#f8fafb}
     .overview-details{margin-top:14px}
     .footer-note{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-top:18px;color:var(--muted);font-size:10px}.footer-note strong{color:var(--navy)}
-    .source-summary{display:grid;gap:13px}.source-summary-main{display:flex;align-items:center;gap:10px}.source-summary-main strong{display:block;color:var(--navy);font-size:13px}.source-summary-main small{display:block;color:var(--muted);margin-top:2px}.source-summary-files{display:grid;gap:8px}.source-file-row{display:grid;grid-template-columns:minmax(120px,.55fr) minmax(190px,1fr) minmax(230px,1.25fr) auto;gap:10px;align-items:center;padding-top:8px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}.source-file-row strong{color:var(--ink)}.source-file-row span:last-child{font-weight:650;color:var(--navy)}.unavailable-value{font-size:16px!important;letter-spacing:0!important}
+    .source-summary{display:grid;gap:13px}.source-summary-main{display:flex;align-items:center;gap:10px}.source-summary-main strong{display:block;color:var(--navy);font-size:13px}.source-summary-main small{display:block;color:var(--muted);margin-top:2px}.source-summary-files{display:grid;gap:8px}.source-file-row{display:grid;grid-template-columns:minmax(120px,.55fr) minmax(190px,1fr) minmax(230px,1.25fr) auto;gap:10px;align-items:center;padding-top:8px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}.source-file-row strong{color:var(--ink)}.source-file-row span:last-child{font-weight:650;color:var(--navy)}.source-file-note span{grid-column:2/-1;min-width:0;overflow-wrap:anywhere}.unavailable-value{font-size:16px!important;letter-spacing:0!important}
     @media(max-width:1400px) and (min-width:1181px){#application-screens-card .source-file-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#application-screens-card .source-file-row>*{min-width:0}}
     @media(max-width:1180px){.topbar{align-items:flex-start;flex-wrap:wrap}.demo-flag{margin-right:0}.filters{width:100%}.filter{flex:1}.filter select,.filter:first-child select{width:100%;min-width:0}.feature-metric{grid-column:span 6}.feature-metric.orders{grid-column:1/-1}.status-row{grid-template-columns:repeat(3,1fr)}.span-3{grid-column:span 6}.span-4{grid-column:span 6}.span-5,.span-7{grid-column:span 12}#screens .span-6{grid-column:1/-1}#portal-screens-card .source-file-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
     @media(max-width:820px){.topbar{padding:14px 18px;gap:14px}.identity{min-width:auto}.demo-flag{order:2}.filters{order:3;display:grid;grid-template-columns:1fr 1fr}.filter:first-child{grid-column:1/-1}.tabbar{padding:0 12px}.tab{padding:0 12px}main{padding:18px}.feature-metric{grid-column:1/-1}.status-row{grid-template-columns:1fr 1fr}.content-grid,.split-hero{grid-template-columns:1fr}.summary-band,.summary-band.company-summary{grid-template-columns:1fr 1fr}.band-metric{border-left:0;padding-left:0;border-top:1px solid #416785;padding-top:10px}.span-3,.span-4,.span-5,.span-6,.span-7,.span-8{grid-column:1/-1}.page-heading{flex-direction:column}.bar-row{grid-template-columns:100px 1fr 55px}.source-file-row{grid-template-columns:1fr 1fr}}
@@ -94,12 +94,12 @@
     <section id="users" class="panel" role="tabpanel" aria-labelledby="tab-users" hidden>
       <div class="page-heading"><div><h1>Usuários e Acessos</h1><p>Estoque, movimento e frequência de uso vistos na mesma leitura.</p></div><div class="period-chip" id="users-period"><span class="status-dot"></span>Aguardando carga</div></div>
       <div class="section-grid numbers">
-        <article class="card source-summary span-12" aria-label="Estado dos arquivos de Usuários"><div class="source-summary-main"><span class="status-dot"></span><div><strong id="users-source-state">Validando os arquivos da Pasta de Dados</strong><small id="users-source-message">Os indicadores aparecem somente após a validação completa.</small></div></div><div class="source-summary-files"><div class="source-file-row"><strong>Usuários e novos cadastros</strong><span id="users-source-origin">Origem pendente</span><span id="users-source-period">Abrangência pendente</span><span id="users-source-partial">Estado pendente</span></div><div class="source-file-row"><strong>Sem login há 30 dias</strong><span id="inactivity-source-origin">Origem pendente</span><span id="inactivity-source-period">Abrangência pendente</span><span id="inactivity-source-partial">Estado pendente</span></div></div></article>
+        <article class="card source-summary span-12" aria-label="Estado dos arquivos de Usuários"><div class="source-summary-main"><span class="status-dot"></span><div><strong id="users-source-state">Validando os arquivos da Pasta de Dados</strong><small id="users-source-message">Os indicadores aparecem somente após a validação completa.</small></div></div><div class="source-summary-files"><div class="source-file-row" data-source-file="usuarios.csv"><strong>Usuários e novos cadastros</strong><span id="users-source-origin">Origem pendente</span><span id="users-source-period">Abrangência pendente</span><span id="users-source-partial">Estado pendente</span></div><div class="source-file-row" data-source-file="usuarios.csv"><strong>Atualização de Usuários</strong><span id="users-source-generated">Geração: indisponível</span><span id="users-contract-version">Contrato: indisponível</span><span id="users-source-observation">Observação: indisponível</span></div><div class="source-file-row" data-source-file="usuarios_inatividade.csv"><strong>Sem login há 30 dias</strong><span id="inactivity-source-origin">Origem pendente</span><span id="inactivity-source-period">Abrangência pendente</span><span id="inactivity-source-partial">Estado pendente</span></div><div class="source-file-row" data-source-file="usuarios_inatividade.csv"><strong>Atualização da inatividade</strong><span id="inactivity-source-generated">Geração: indisponível</span><span id="inactivity-contract-version">Contrato: indisponível</span><span id="inactivity-source-observation">Observação: indisponível</span></div></div></article>
         <article class="card compact-kpi span-3"><div class="stat-top"><span>Total existente</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big unavailable-value" data-user-value="current-total">Indisponível</div><div class="compare"><span data-user-value="total-caption">Aguardando arquivos válidos</span><span data-user-value="total-state">Sem carga válida</span></div></article>
         <article class="card compact-kpi span-3"><div class="stat-top"><span>Novos usuários</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big unavailable-value" data-user-value="new-users">Indisponível</div><div class="compare"><span data-user-value="new-users-previous">Período anterior indisponível</span><span class="trend-good" data-user-value="new-users-delta">Sem comparação</span></div></article>
         <article class="card compact-kpi span-3"><div class="stat-top"><span>Baixas</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big unavailable-value">Indisponível</div><div class="compare"><span>Arquivos não trazem data de baixa</span><span class="trend-warn">Pendente</span></div></article>
         <article class="card compact-kpi span-3"><div class="stat-top"><span>Inativos · 30 dias</span><svg class="svg-icon"><use href="#i-pause"/></svg></div><div class="big unavailable-value" data-user-value="inactive-30">Indisponível</div><div class="compare"><span>Data de referência</span><span data-user-value="inactivity-reference">Referência pendente</span></div></article>
-        <article class="card source-summary span-12" aria-label="Estado dos arquivos de Acessos"><div class="source-summary-main"><span class="status-dot"></span><div><strong id="access-source-state">Validando acessos.csv e ranking_acessos.csv</strong><small id="access-source-message">Os indicadores aparecem somente para combinações válidas de mês e Produto Digital.</small></div></div><div class="source-summary-files"><div class="source-file-row"><strong>Acessos</strong><span id="access-source-origin">Origem: indisponível</span><span id="access-source-period">Abrangência: indisponível</span><span id="access-load-state">Sem arquivo válido</span></div><div class="source-file-row"><strong>Atualização de Acessos</strong><span id="access-source-generated">Geração: indisponível</span><span id="access-source-partial">Parcialidade: indisponível</span><span id="access-source-observation">Observação: indisponível</span></div><div class="source-file-row"><strong>Ranking de Empresas Clientes</strong><span id="ranking-source-origin">Origem: indisponível</span><span id="ranking-source-period">Abrangência: indisponível</span><span id="ranking-load-state">Sem arquivo válido</span></div><div class="source-file-row"><strong>Atualização do ranking</strong><span id="ranking-source-generated">Geração: indisponível</span><span id="ranking-source-partial">Parcialidade: indisponível</span><span id="ranking-source-observation">Observação: indisponível</span></div></div><div class="attention-list" id="access-notices" aria-live="polite"></div></article>
+        <article class="card source-summary span-12" aria-label="Estado dos arquivos de Acessos"><div class="source-summary-main"><span class="status-dot"></span><div><strong id="access-source-state">Validando acessos.csv e ranking_acessos.csv</strong><small id="access-source-message">Os indicadores aparecem somente para combinações válidas de mês e Produto Digital.</small></div></div><div class="source-summary-files"><div class="source-file-row" data-source-file="acessos.csv"><strong>Acessos</strong><span id="access-source-origin">Origem: indisponível</span><span id="access-source-period">Abrangência: indisponível</span><span id="access-load-state">Sem arquivo válido</span></div><div class="source-file-row" data-source-file="acessos.csv"><strong>Atualização de Acessos</strong><span id="access-source-generated">Geração: indisponível</span><span id="access-contract-version">Contrato: indisponível</span><span id="access-source-partial">Parcialidade: indisponível</span></div><div class="source-file-row source-file-note" data-source-file="acessos.csv"><strong>Observação de Acessos</strong><span id="access-source-observation">Observação: indisponível</span></div><div class="source-file-row" data-source-file="ranking_acessos.csv"><strong>Ranking de Empresas Clientes</strong><span id="ranking-source-origin">Origem: indisponível</span><span id="ranking-source-period">Abrangência: indisponível</span><span id="ranking-load-state">Sem arquivo válido</span></div><div class="source-file-row" data-source-file="ranking_acessos.csv"><strong>Atualização do ranking</strong><span id="ranking-source-generated">Geração: indisponível</span><span id="ranking-contract-version">Contrato: indisponível</span><span id="ranking-source-partial">Parcialidade: indisponível</span></div><div class="source-file-row source-file-note" data-source-file="ranking_acessos.csv"><strong>Observação do ranking</strong><span id="ranking-source-observation">Observação: indisponível</span></div></div><div class="attention-list" id="access-notices" aria-live="polite"></div></article>
         <article class="card compact-kpi span-4"><div class="stat-top"><span>Logins</span><svg class="svg-icon" aria-hidden="true"><use href="#i-access"/></svg></div><div class="big unavailable-value" data-access-value="total-logins">Indisponível</div><div class="compare"><span id="access-selection-label">Período e produto indisponíveis</span><span id="access-coverage">Sem carga válida</span></div></article>
         <article class="card compact-kpi span-4"><div class="stat-top"><span>Usuários únicos</span><svg class="svg-icon" aria-hidden="true"><use href="#i-users"/></svg></div><div class="big unavailable-value" data-access-value="unique-users">Indisponível</div><div class="compare"><span>Logins concluídos com sucesso</span><span id="access-unique-state">Não informado</span></div></article>
         <article class="card compact-kpi span-4"><div class="stat-top"><span>Empresas Clientes distintas</span><svg class="svg-icon" aria-hidden="true"><use href="#i-company"/></svg></div><div class="big unavailable-value" data-access-value="distinct-companies">Indisponível</div><div class="compare"><span>Na combinação selecionada</span><span id="access-company-state">Não informado</span></div></article>
@@ -109,7 +109,7 @@
     <section id="companies" class="panel" role="tabpanel" aria-labelledby="tab-companies" hidden>
       <div class="page-heading"><div><h1>Empresas Clientes</h1><p>Situação atual classificada por si_status, sem inferir histórico de suspensões.</p></div><div class="period-chip" id="companies-period"><span class="status-dot"></span>Referência indisponível</div></div>
       <div class="section-grid numbers">
-        <article class="card source-summary span-12" aria-label="Estado do arquivo de Empresas Clientes"><div class="source-summary-main"><span class="status-dot"></span><div><strong id="companies-source-state">Validando empresas.csv</strong><small id="companies-source-message">Os totais aparecem somente após a validação integral do arquivo.</small></div></div><div class="source-summary-files"><div class="source-file-row"><strong>Situação atual</strong><span id="companies-source-origin">Origem: indisponível</span><span id="companies-source-reference">Referência: indisponível</span><span id="companies-source-partial">Sem arquivo válido</span></div><div class="source-file-row"><strong>Atualização</strong><span id="companies-source-generated">Geração: indisponível</span><span id="companies-source-observation">Observação: indisponível</span><span id="companies-load-state">Aguardando carga</span></div></div><div class="attention-list" id="companies-warnings" aria-live="polite"></div></article>
+        <article class="card source-summary span-12" aria-label="Estado do arquivo de Empresas Clientes"><div class="source-summary-main"><span class="status-dot"></span><div><strong id="companies-source-state">Validando empresas.csv</strong><small id="companies-source-message">Os totais aparecem somente após a validação integral do arquivo.</small></div></div><div class="source-summary-files"><div class="source-file-row" data-source-file="empresas.csv"><strong>Situação atual</strong><span id="companies-source-origin">Origem: indisponível</span><span id="companies-source-reference">Referência: indisponível</span><span id="companies-source-partial">Sem arquivo válido</span></div><div class="source-file-row" data-source-file="empresas.csv"><strong>Atualização</strong><span id="companies-source-generated">Geração: indisponível</span><span id="companies-contract-version">Contrato: indisponível</span><span id="companies-load-state">Aguardando carga</span></div><div class="source-file-row source-file-note" data-source-file="empresas.csv"><strong>Observação</strong><span id="companies-source-observation">Observação: indisponível</span></div></div><div class="attention-list" id="companies-warnings" aria-live="polite"></div></article>
         <div class="summary-band company-summary span-12"><div><h2>Saúde da base de empresas</h2><p>Classificação atual da Lyra M2M</p></div><div class="band-metric"><small>Ativas</small><strong class="unavailable-value" data-company-value="active">Indisponível</strong></div><div class="band-metric"><small>Inativas</small><strong class="unavailable-value" data-company-value="inactive">Indisponível</strong></div><div class="band-metric"><small>Suspensas atualmente</small><strong class="unavailable-value" data-company-value="suspended-current">Indisponível</strong></div><div class="band-metric"><small>Suspensas · 30 dias</small><strong class="unavailable-value" data-company-value="suspended-30-days">Indisponível</strong></div></div>
         <article class="card span-7" id="access-ranking"><div class="card-header"><div><h2>Empresas que mais acessaram</h2><div class="card-sub" id="access-ranking-period">Ranking não informado para esta combinação.</div></div><span class="source-tag" id="access-ranking-coverage">Sem carga válida</span></div><div class="source-summary-files"><div class="source-file-row"><strong>Fonte do ranking</strong><span id="access-ranking-source-origin">Origem: indisponível</span><span id="access-ranking-source-period">Abrangência: indisponível</span><span id="access-ranking-source-state">Sem arquivo válido</span></div></div><table><thead><tr><th>#</th><th>Empresa Cliente</th><th>Logins</th><th>Usuários únicos</th></tr></thead><tbody id="access-ranking-body"><tr><td colspan="4">Ranking não informado para esta combinação.</td></tr></tbody></table></article>
         <article class="card span-5"><div class="card-header"><div><h2>Mais usuários criados</h2><div class="card-sub">Códigos anônimos protegem os nomes das empresas</div></div><span class="source-tag" id="users-ranking-period">Dados carregados · período pendente</span></div><div class="bars" id="users-ranking" aria-live="polite"><div class="bar-row"><span class="bar-label">Aguardando carga</span><div class="bar-track"><div class="bar-fill cyan" style="width:0%"></div></div><span class="bar-value">—</span></div></div></article>
@@ -120,8 +120,8 @@
     <section id="screens" class="panel" role="tabpanel" aria-labelledby="tab-screens" hidden>
       <div class="page-heading"><div><h1>Telas mais acessadas</h1><p>Somente visualizações totais. As fontes atuais não permitem atribuir as telas a usuários únicos.</p></div><div class="period-chip" id="screens-data-state"><span class="status-dot"></span>Portal em validação · Aplicativo em validação</div></div>
       <div class="section-grid numbers">
-        <article class="card source-summary span-6" id="portal-screens-card"><div class="card-header"><div><h2>Portal · Lyra M2M</h2><div class="screen-source"><span class="status-dot"></span><span id="portal-source-state">Validando telas_portal.csv</span></div></div><span class="source-tag" id="portal-load-state">Aguardando carga</span></div><div class="compact-kpi"><div class="stat-top"><span>Visualizações totais do Portal</span><svg class="svg-icon" aria-hidden="true"><use href="#i-screen"/></svg></div><div class="big unavailable-value" id="portal-total-views">Indisponível</div><div class="compare"><span id="portal-total-evidence">Evidência pendente</span><span id="portal-per-screen-status">Detalhamento por tela indisponível</span></div></div><div class="source-summary-files"><div class="source-file-row"><strong>Fonte do Portal</strong><span id="portal-source-origin">Origem: indisponível</span><span id="portal-source-period">Abrangência: indisponível</span><span id="portal-source-partial">Sem arquivo válido</span></div><div class="source-file-row"><strong>Atualização</strong><span id="portal-source-generated">Geração: indisponível</span><span id="portal-source-observation">Limitação: indisponível</span><span id="portal-warning-state">Sem carga válida</span></div></div><div class="not-available"><div><svg class="svg-icon" aria-hidden="true"><use href="#i-alert"/></svg><strong>Visualizações por tela: Não validado</strong><div id="portal-limitations" aria-label="Limitações e metodologia do Portal"><p>Limitação informada no arquivo ainda indisponível.</p></div><p id="portal-methodology">Sessões associadas a URL e eventos screen_view_* não equivalem a Visualizações de Tela. O export geral do Clarity contém somente as 12 URLs principais; uma tela ausente não representa zero.</p></div></div></article>
-        <article class="card source-summary span-6" id="application-screens-card"><div class="card-header"><div><h2>Aplicativo · Lyra M2M</h2><div class="screen-source"><span class="status-dot"></span><span id="application-source-state">Validando telas_aplicativo.csv</span></div></div><span class="source-tag" id="application-load-state">Aguardando carga</span></div><div class="compact-kpi"><div class="stat-top"><span>Visualizações totais do Aplicativo</span><svg class="svg-icon" aria-hidden="true"><use href="#i-screen"/></svg></div><div class="big unavailable-value" id="application-total-views">Indisponível</div><div class="compare"><span id="application-total-evidence">Evidência pendente</span><span id="application-period-state">Período indisponível</span></div></div><div class="source-summary-files"><div class="source-file-row"><strong>Fonte do Aplicativo</strong><span id="application-source-origin">Origem: indisponível</span><span id="application-source-period">Abrangência: indisponível</span><span id="application-source-partial">Sem arquivo válido</span></div><div class="source-file-row"><strong>Propriedade GA</strong><span id="application-source-property">Propriedade: indisponível</span><span id="application-source-generated">Geração: indisponível</span><span id="application-source-active-period">Período ativo: indisponível</span></div><div class="source-file-row"><strong>Manifesto</strong><span id="application-source-observation">Observação: indisponível</span><span id="application-contract-version">Contrato: indisponível</span><span id="application-warning-state">Sem carga válida</span></div></div><div class="card-header"><div><h3>Classes técnicas</h3><div class="card-sub">Nomes do Google Analytics preservados sem tradução funcional inventada</div></div><span class="source-tag">Informação parcial</span></div><div class="bars" id="application-classes" aria-live="polite"><span class="bar-label">Sem classes técnicas validadas</span></div><div class="card-header"><div><h3>Eventos funcionais</h3><div class="card-sub">Evidências de funcionalidade, não Visualizações de Tela</div></div><span class="source-tag" id="application-total-events">Total de eventos indisponível</span></div><div class="attention-list" id="application-events" aria-live="polite"><div class="attention"><div class="attention-icon warn"><svg class="svg-icon" aria-hidden="true"><use href="#i-alert"/></svg></div><div><strong>Sem eventos funcionais validados</strong><small>Aguardando telas_aplicativo.csv</small></div><span class="attention-value">Indisponível</span></div></div><div class="not-available"><div><svg class="svg-icon" aria-hidden="true"><use href="#i-alert"/></svg><strong>O evento login não substitui Acesso</strong><p>A semântica de login concluído precisa ser validada antes de qualquer uso como Acesso do Aplicativo.</p></div></div></article>
+        <article class="card source-summary span-6" id="portal-screens-card"><div class="card-header"><div><h2>Portal · Lyra M2M</h2><div class="screen-source"><span class="status-dot"></span><span id="portal-source-state">Validando telas_portal.csv</span></div></div><span class="source-tag" id="portal-load-state">Aguardando carga</span></div><div class="compact-kpi"><div class="stat-top"><span>Visualizações totais do Portal</span><svg class="svg-icon" aria-hidden="true"><use href="#i-screen"/></svg></div><div class="big unavailable-value" id="portal-total-views">Indisponível</div><div class="compare"><span id="portal-total-evidence">Evidência pendente</span><span id="portal-per-screen-status">Detalhamento por tela indisponível</span></div></div><div class="source-summary-files"><div class="source-file-row" data-source-file="telas_portal.csv"><strong>Fonte do Portal</strong><span id="portal-source-origin">Origem: indisponível</span><span id="portal-source-period">Abrangência: indisponível</span><span id="portal-source-partial">Sem arquivo válido</span></div><div class="source-file-row" data-source-file="telas_portal.csv"><strong>Atualização</strong><span id="portal-source-generated">Geração: indisponível</span><span id="portal-contract-version">Contrato: indisponível</span><span id="portal-warning-state">Sem carga válida</span></div><div class="source-file-row source-file-note" data-source-file="telas_portal.csv"><strong>Limitação do manifesto</strong><span id="portal-source-observation">Limitação: indisponível</span></div></div><div class="not-available"><div><svg class="svg-icon" aria-hidden="true"><use href="#i-alert"/></svg><strong>Visualizações por tela: Não validado</strong><div id="portal-limitations" aria-label="Limitações e metodologia do Portal"><p>Limitação informada no arquivo ainda indisponível.</p></div><p id="portal-methodology">Sessões associadas a URL e eventos screen_view_* não equivalem a Visualizações de Tela. O export geral do Clarity contém somente as 12 URLs principais; uma tela ausente não representa zero.</p></div></div></article>
+        <article class="card source-summary span-6" id="application-screens-card"><div class="card-header"><div><h2>Aplicativo · Lyra M2M</h2><div class="screen-source"><span class="status-dot"></span><span id="application-source-state">Validando telas_aplicativo.csv</span></div></div><span class="source-tag" id="application-load-state">Aguardando carga</span></div><div class="compact-kpi"><div class="stat-top"><span>Visualizações totais do Aplicativo</span><svg class="svg-icon" aria-hidden="true"><use href="#i-screen"/></svg></div><div class="big unavailable-value" id="application-total-views">Indisponível</div><div class="compare"><span id="application-total-evidence">Evidência pendente</span><span id="application-period-state">Período indisponível</span></div></div><div class="source-summary-files"><div class="source-file-row" data-source-file="telas_aplicativo.csv"><strong>Fonte do Aplicativo</strong><span id="application-source-origin">Origem: indisponível</span><span id="application-source-period">Abrangência: indisponível</span><span id="application-source-partial">Sem arquivo válido</span></div><div class="source-file-row" data-source-file="telas_aplicativo.csv"><strong>Propriedade GA</strong><span id="application-source-property">Propriedade: indisponível</span><span id="application-source-generated">Geração: indisponível</span><span id="application-source-active-period">Período ativo: indisponível</span></div><div class="source-file-row" data-source-file="telas_aplicativo.csv"><strong>Manifesto</strong><span id="application-source-observation">Observação: indisponível</span><span id="application-contract-version">Contrato: indisponível</span><span id="application-warning-state">Sem carga válida</span></div></div><div class="card-header"><div><h3>Classes técnicas</h3><div class="card-sub">Nomes do Google Analytics preservados sem tradução funcional inventada</div></div><span class="source-tag">Informação parcial</span></div><div class="bars" id="application-classes" aria-live="polite"><span class="bar-label">Sem classes técnicas validadas</span></div><div class="card-header"><div><h3>Eventos funcionais</h3><div class="card-sub">Evidências de funcionalidade, não Visualizações de Tela</div></div><span class="source-tag" id="application-total-events">Total de eventos indisponível</span></div><div class="attention-list" id="application-events" aria-live="polite"><div class="attention"><div class="attention-icon warn"><svg class="svg-icon" aria-hidden="true"><use href="#i-alert"/></svg></div><div><strong>Sem eventos funcionais validados</strong><small>Aguardando telas_aplicativo.csv</small></div><span class="attention-value">Indisponível</span></div></div><div class="not-available"><div><svg class="svg-icon" aria-hidden="true"><use href="#i-alert"/></svg><strong>O evento login não substitui Acesso</strong><p>A semântica de login concluído precisa ser validada antes de qualquer uso como Acesso do Aplicativo.</p></div></div></article>
         <div class="not-available span-6"><div><svg class="svg-icon" aria-hidden="true"><use href="#i-store"/></svg><strong>Loja · visualizações de tela</strong><p>A carga de Acessos da Loja não equivale a Visualizações de Tela. Nenhum número é apresentado até existir uma fonte contratada para telas.</p></div></div>
       </div>
     </section>
@@ -253,19 +253,28 @@
         container.append(row);
       });
     }
-    function setSourceMetadata(prefix,source){
-      const origin=document.getElementById(`${prefix}-source-origin`);
-      const period=document.getElementById(`${prefix}-source-period`);
-      const completeness=document.getElementById(`${prefix}-source-partial`);
+    function setManifestSource(prefix,source,{periodKind='range',completeLabel='Período completo',partialLabel='Período parcial',generationLabel='Geração',observationLabel='Observação'}={}){
+      const setField=(suffix,value)=>{const field=document.getElementById(`${prefix}-${suffix}`);if(field)field.textContent=value};
       if(!source){
-        origin.textContent='Origem: indisponível';
-        period.textContent='Abrangência: indisponível';
-        completeness.textContent='Sem arquivo válido';
+        setField('source-origin','Origem: indisponível');
+        setField(periodKind==='reference'?'source-reference':'source-period',periodKind==='reference'?'Referência: indisponível':'Abrangência: indisponível');
+        setField('source-partial','Sem arquivo válido');
+        setField('source-generated',`${generationLabel}: indisponível`);
+        setField('contract-version','Contrato: indisponível');
+        setField('source-observation',`${observationLabel}: indisponível`);
         return;
       }
-      origin.textContent=`Origem: ${sourceNames[source.origin]??source.origin} · Estado: ${source.state}`;
-      period.textContent=`Abrangência: ${formatDate(source.periodStart)} a ${formatDate(source.periodEnd)}`;
-      completeness.textContent=source.partial?'Arquivo parcial':'Arquivo completo';
+      setField('source-origin',`Origem: ${sourceNames[source.origin]??source.origin} · Estado: ${source.state}`);
+      setField(periodKind==='reference'?'source-reference':'source-period',periodKind==='reference'
+        ?`Referência: ${formatDate(source.periodEnd)}`
+        :`Abrangência: ${formatDate(source.periodStart)} a ${formatDate(source.periodEnd)}`);
+      setField('source-partial',source.partial?partialLabel:completeLabel);
+      setField('source-generated',`${generationLabel}: ${new Date(source.generatedAt).toLocaleString('pt-BR')}`);
+      setField('contract-version',`Contrato: ${source.contractVersion}`);
+      setField('source-observation',source.observation?`${observationLabel}: ${source.observation}`:`Sem ${observationLabel.toLocaleLowerCase('pt-BR')} no manifesto`);
+    }
+    function setSourceMetadata(prefix,source){
+      setManifestSource(prefix,source,{completeLabel:'Arquivo completo',partialLabel:'Arquivo parcial'});
     }
     function renderLoadedUsers(payload){
       const {source,inactivitySource,indicators}=payload;
@@ -335,24 +344,7 @@
       });
     }
     function setAccessSource(prefix,source){
-      const origin=document.getElementById(`${prefix}-source-origin`);
-      const period=document.getElementById(`${prefix}-source-period`);
-      const generated=document.getElementById(`${prefix}-source-generated`);
-      const partial=document.getElementById(`${prefix}-source-partial`);
-      const observation=document.getElementById(`${prefix}-source-observation`);
-      if(!source){
-        origin.textContent='Origem: indisponível';
-        period.textContent='Abrangência: indisponível';
-        generated.textContent='Geração: indisponível';
-        partial.textContent='Parcialidade: indisponível';
-        observation.textContent='Observação: indisponível';
-        return;
-      }
-      origin.textContent=`Origem: ${sourceNames[source.origin]??source.origin} · Estado: ${source.state}`;
-      period.textContent=`Abrangência: ${formatDate(source.periodStart)} a ${formatDate(source.periodEnd)}`;
-      generated.textContent=`Geração: ${new Date(source.generatedAt).toLocaleString('pt-BR')}`;
-      partial.textContent=source.partial?'Período parcial':'Período completo';
-      observation.textContent=source.observation?`Observação: ${source.observation}`:'Sem observação no manifesto';
+      setManifestSource(prefix,source);
     }
     function setRankingCardSource(source,state){
       const origin=document.getElementById('access-ranking-source-origin');
@@ -625,26 +617,13 @@
       });
     }
     function renderCompanySource(source){
-      const origin=document.getElementById('companies-source-origin');
-      const reference=document.getElementById('companies-source-reference');
-      const completeness=document.getElementById('companies-source-partial');
-      const generated=document.getElementById('companies-source-generated');
-      const observation=document.getElementById('companies-source-observation');
-      if(!source){
-        origin.textContent='Origem: indisponível';
-        reference.textContent='Referência: indisponível';
-        completeness.textContent='Sem arquivo válido';
-        generated.textContent='Geração: indisponível';
-        observation.textContent='Observação: indisponível';
-        document.getElementById('companies-period').lastChild.textContent='Referência indisponível';
-        return;
-      }
-      origin.textContent=`Origem: ${sourceNames[source.origin]??source.origin} · Estado: ${source.state}`;
-      reference.textContent=`Referência: ${formatDate(source.periodEnd)}`;
-      completeness.textContent=source.partial?'Fotografia parcial':'Fotografia completa';
-      generated.textContent=`Gerado em: ${new Date(source.generatedAt).toLocaleString('pt-BR')}`;
-      observation.textContent=source.observation?`Observação: ${source.observation}`:'Sem observação no manifesto';
-      document.getElementById('companies-period').lastChild.textContent=`Situação em ${formatDate(source.periodEnd)}`;
+      setManifestSource('companies',source,{
+        periodKind:'reference',
+        completeLabel:'Fotografia completa',
+        partialLabel:'Fotografia parcial',
+        generationLabel:'Gerado em',
+      });
+      document.getElementById('companies-period').lastChild.textContent=source?`Situação em ${formatDate(source.periodEnd)}`:'Referência indisponível';
     }
     function appendCompanyNotice(container,title,detail,value,tone='warn'){
       const notice=document.createElement('div');
@@ -744,24 +723,7 @@
       }
     }
     function renderPortalSource(source){
-      const origin=document.getElementById('portal-source-origin');
-      const period=document.getElementById('portal-source-period');
-      const completeness=document.getElementById('portal-source-partial');
-      const generated=document.getElementById('portal-source-generated');
-      const observation=document.getElementById('portal-source-observation');
-      if(!source){
-        origin.textContent='Origem: indisponível';
-        period.textContent='Abrangência: indisponível';
-        completeness.textContent='Sem arquivo válido';
-        generated.textContent='Geração: indisponível';
-        observation.textContent='Limitação: indisponível';
-        return;
-      }
-      origin.textContent=`Origem: ${sourceNames[source.origin]??source.origin} · Estado: ${source.state}`;
-      period.textContent=`Abrangência: ${formatDate(source.periodStart)} a ${formatDate(source.periodEnd)}`;
-      completeness.textContent=source.partial?'Período parcial':'Período completo';
-      generated.textContent=`Gerado em: ${new Date(source.generatedAt).toLocaleString('pt-BR')}`;
-      observation.textContent=source.observation?`Limitação: ${source.observation}`:'Sem observação no manifesto';
+      setManifestSource('portal',source,{generationLabel:'Gerado em',observationLabel:'Limitação'});
     }
     function renderPortalLimitations(limitations){
       const container=document.getElementById('portal-limitations');
@@ -825,33 +787,9 @@
     }
     const applicationEvidenceLabels={observado:'Observado',derivado:'Derivado',nao_validado:'Não validado'};
     function renderApplicationSource(source,property,activePeriod){
-      const origin=document.getElementById('application-source-origin');
-      const period=document.getElementById('application-source-period');
-      const completeness=document.getElementById('application-source-partial');
-      const propertyLabel=document.getElementById('application-source-property');
-      const generated=document.getElementById('application-source-generated');
-      const activePeriodLabel=document.getElementById('application-source-active-period');
-      const observation=document.getElementById('application-source-observation');
-      const contract=document.getElementById('application-contract-version');
-      if(!source){
-        origin.textContent='Origem: indisponível';
-        period.textContent='Abrangência: indisponível';
-        completeness.textContent='Sem arquivo válido';
-        propertyLabel.textContent='Propriedade: indisponível';
-        generated.textContent='Geração: indisponível';
-        activePeriodLabel.textContent='Período ativo: indisponível';
-        observation.textContent='Observação: indisponível';
-        contract.textContent='Contrato: indisponível';
-        return;
-      }
-      origin.textContent=`Origem: ${sourceNames[source.origin]??source.origin} · Estado: ${source.state}`;
-      period.textContent=`Abrangência: ${formatDate(source.periodStart)} a ${formatDate(source.periodEnd)}`;
-      completeness.textContent=source.partial?'Período parcial':'Período completo';
-      propertyLabel.textContent=property?`Propriedade: ${property.name} · ID: ${property.id}`:'Propriedade: indisponível';
-      generated.textContent=`Gerado em: ${new Date(source.generatedAt).toLocaleString('pt-BR')}`;
-      activePeriodLabel.textContent=activePeriod?`Período ativo: ${activePeriod}`:'Período ativo: indisponível';
-      observation.textContent=source.observation?`Observação: ${source.observation}`:'Sem observação no manifesto';
-      contract.textContent=`Contrato: ${source.contractVersion}`;
+      setManifestSource('application',source,{generationLabel:'Gerado em'});
+      document.getElementById('application-source-property').textContent=source&&property?`Propriedade: ${property.name} · ID: ${property.id}`:'Propriedade: indisponível';
+      document.getElementById('application-source-active-period').textContent=source&&activePeriod?`Período ativo: ${activePeriod}`:'Período ativo: indisponível';
     }
     function renderApplicationClasses(items){
       const container=document.getElementById('application-classes');

@@ -86,7 +86,7 @@ Para a suíte completa, fora desta fase direcionada:
 npm.cmd test
 ```
 
-A inspeção visual em 16:9 e 1366 × 768 complementa os testes automatizados.
+A validação visual da Issue #9 captura uma evidência PNG de cada uma das seis abas em 1920 × 1080 e 1366 × 768. As doze capturas ficam como anexos do teste em `test-results` e são renovadas a cada execução direcionada. O mesmo teste verifica, no DOM público, se o título permanece no viewport, se cartões e tabelas respeitam os limites horizontais, se o conteúdo não excede o cartão e se os itens das grades não se sobrepõem.
 
 ## Documentação do produto
 

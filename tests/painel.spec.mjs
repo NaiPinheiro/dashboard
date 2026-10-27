@@ -26,6 +26,61 @@ const areas = [
   ['Desenvolvimento', 'Indicadores de Desenvolvimento'],
 ];
 
+async function expectVisibleSourceMetadata(page, fileName, expected) {
+  const metadata = page.locator(`[data-source-file="${fileName}"]:visible`);
+  await expect(metadata.first()).toBeVisible();
+  const text = (await metadata.allTextContents()).join(' ');
+  expect(text).toContain('Contrato: 1.0');
+  expect(text).toMatch(/Gera(?:ção|do em): 30\/09\/2026/);
+  expect(text).toContain(expected.period);
+  expect(text).toContain(`Origem: ${expected.origin}`);
+  expect(text).toContain(`Estado: ${expected.state}`);
+  expect(text).toMatch(/(?:Arquivo|Período|Fotografia) (?:completo|completa|parcial)/);
+}
+
+async function inspectVisiblePanelBounds(page) {
+  return page.locator('.panel.active').evaluate((panel) => {
+    const label = (element) => element.id || element.getAttribute('aria-label') || element.querySelector('h1,h2,h3,strong')?.textContent?.trim() || element.className;
+    const rendered = (element) => {
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+    };
+    const essentials = [...panel.querySelectorAll('.page-heading,.card,.summary-band,.not-available,.dev-empty,table')].filter(rendered);
+    const outsideViewport = essentials
+      .filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return rect.left < -1 || rect.right > window.innerWidth + 1;
+      })
+      .map(label);
+    const clippedContainers = [...panel.querySelectorAll('.card,.summary-band,.not-available,.dev-empty')]
+      .filter(rendered)
+      .filter((element) => element.scrollWidth > element.clientWidth + 1)
+      .map(label);
+    const overlaps = [];
+    for (const grid of panel.querySelectorAll('.section-grid,.hero-grid,.content-grid')) {
+      const children = [...grid.children].filter(rendered);
+      for (let leftIndex = 0; leftIndex < children.length; leftIndex += 1) {
+        const left = children[leftIndex].getBoundingClientRect();
+        for (let rightIndex = leftIndex + 1; rightIndex < children.length; rightIndex += 1) {
+          const right = children[rightIndex].getBoundingClientRect();
+          const overlapWidth = Math.min(left.right, right.right) - Math.max(left.left, right.left);
+          const overlapHeight = Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top);
+          if (overlapWidth > 1 && overlapHeight > 1) overlaps.push(`${label(children[leftIndex])} <> ${label(children[rightIndex])}`);
+        }
+      }
+    }
+    const heading = panel.querySelector('.page-heading');
+    const headingRect = heading?.getBoundingClientRect();
+    return {
+      clippedContainers,
+      outsideViewport,
+      overlaps,
+      headingVisible: Boolean(headingRect && headingRect.top >= -1 && headingRect.bottom <= window.innerHeight + 1),
+    };
+  });
+}
+
 test('a gerente percorre as seis áreas do MVP do Painel', async ({ page }) => {
   await page.goto('/painel.html');
 
@@ -1235,6 +1290,34 @@ test.describe('Issue #9 · validação funcional integrada', () => {
       expect(source.state).toMatch(/^(pronto|parcial)$/);
     }
 
+    await page.getByRole('tab', { name: 'Usuários e Acessos', exact: true }).click();
+    await expectVisibleSourceMetadata(page, 'usuarios.csv', {
+      origin: 'MySQL', state: 'pronto', period: '01/08/2026 a 30/09/2026',
+    });
+    await expectVisibleSourceMetadata(page, 'usuarios_inatividade.csv', {
+      origin: 'MySQL', state: 'pronto', period: '01/09/2026 a 30/09/2026',
+    });
+    await expectVisibleSourceMetadata(page, 'acessos.csv', {
+      origin: 'MySQL', state: 'pronto', period: '01/08/2026 a 30/09/2026',
+    });
+    await expectVisibleSourceMetadata(page, 'ranking_acessos.csv', {
+      origin: 'MySQL', state: 'pronto', period: '01/08/2026 a 30/09/2026',
+    });
+
+    await page.getByRole('tab', { name: 'Empresas', exact: true }).click();
+    await expectVisibleSourceMetadata(page, 'empresas.csv', {
+      origin: 'MySQL', state: 'pronto', period: '30/09/2026',
+    });
+
+    await page.getByRole('tab', { name: 'Telas', exact: true }).click();
+    await expectVisibleSourceMetadata(page, 'telas_portal.csv', {
+      origin: 'Microsoft Clarity', state: 'parcial', period: '01/08/2026 a 30/09/2026',
+    });
+    await expectVisibleSourceMetadata(page, 'telas_aplicativo.csv', {
+      origin: 'Google Analytics', state: 'pronto', period: '01/08/2026 a 30/09/2026',
+    });
+
+    await page.getByRole('tab', { name: 'Visão geral', exact: true }).click();
     const overviewSources = page.getByRole('tabpanel', { name: 'Visão geral' })
       .getByRole('article', { name: 'Fontes da Visão geral' });
     for (const sourceName of ['users', 'inactivity', 'access', 'companies', 'portal', 'application']) {
@@ -1357,7 +1440,7 @@ test.describe('Issue #9 · validação funcional integrada', () => {
 
 
 
-test('Issue #9 · seis abas mantêm teclado, foco visível, movimento reduzido e leitura nos viewports exigidos', async ({ page }) => {
+test('Issue #9 · seis abas mantêm teclado, foco, movimento reduzido e limites visuais nos viewports exigidos', async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
 
   for (const viewport of [
@@ -1370,14 +1453,25 @@ test('Issue #9 · seis abas mantêm teclado, foco visível, movimento reduzido e
     const tabs = navigation.getByRole('tab');
     await expect(tabs).toHaveCount(6);
 
-    for (const [tabName, headingName] of areas) {
+    for (const [index, [tabName, headingName]] of areas.entries()) {
       const tab = navigation.getByRole('tab', { name: tabName, exact: true });
       await tab.click();
       await expect(tab).toHaveAttribute('aria-selected', 'true');
       await expect(page.getByRole('heading', { name: headingName, exact: true })).toBeVisible();
       const activePanel = page.locator('.panel.active');
       await expect(activePanel).toHaveCSS('animation-name', 'none');
-      expect(await activePanel.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      const layout = await inspectVisiblePanelBounds(page);
+      expect(layout.headingVisible, `${tabName} ${viewport.width}x${viewport.height}: título recortado`).toBe(true);
+      expect(layout.outsideViewport, `${tabName} ${viewport.width}x${viewport.height}: elementos fora do viewport`).toEqual([]);
+      expect(layout.clippedContainers, `${tabName} ${viewport.width}x${viewport.height}: conteúdo fora do cartão`).toEqual([]);
+      expect(layout.overlaps, `${tabName} ${viewport.width}x${viewport.height}: sobreposição`).toEqual([]);
+
+      const evidencePath = testInfo.outputPath(`issue-9-${viewport.width}x${viewport.height}-tab-${index + 1}.png`);
+      await page.screenshot({ path: evidencePath, animations: 'disabled' });
+      await testInfo.attach(`Issue #9 · ${viewport.width}x${viewport.height} · ${tabName}`, {
+        path: evidencePath,
+        contentType: 'image/png',
+      });
     }
   }
 
