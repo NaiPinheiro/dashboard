@@ -359,7 +359,7 @@ test('Loja, Pedidos, Franquias e suspensões recentes permanecem sem números in
 
   const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
   await expect(overview.locator('article').filter({ hasText: 'Pedidos criados' }).getByText('Indisponível', { exact: true })).toBeVisible();
-  await expect(overview.locator('article').filter({ hasText: 'Suspensas' }).getByText('Indisponível', { exact: true })).toBeVisible();
+  await expect(overview.locator('article').filter({ hasText: 'Suspensões recentes' }).getByText('Indisponível', { exact: true })).toBeVisible();
   await expect(overview.getByText('184', { exact: true })).toHaveCount(0);
   await expect(overview.getByText('5', { exact: true })).toHaveCount(0);
 
@@ -1042,5 +1042,74 @@ test.describe('Issue #7 · Telas do Aplicativo e evidências do Google Analytics
     await expect(applicationCard.getByText('0', { exact: true })).toHaveCount(0);
     await expect(applicationCard.getByText('Sem classes técnicas validadas', { exact: true })).toBeVisible();
     await expect(applicationCard.getByText('Sem eventos funcionais validados', { exact: true })).toBeVisible();
+  });
+});
+
+
+test.describe('Issue #8 · consolidação da Visão geral', () => {
+  test('consolida somente conjuntos válidos com referência, proveniência e lacunas explícitas', async ({ page }) => {
+    await page.goto('/painel.html');
+
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-user-value="current-total"]')).toHaveText('410');
+    await expect(overview.locator('[data-access-value="overview-logins"]')).toHaveText('1.200');
+    await expect(overview.locator('[data-overview-value="inactive-companies"]')).toHaveText('8');
+    await expect(overview.locator('[data-overview-value="portal-views"]')).toHaveText('12.480');
+    await expect(overview.locator('[data-overview-value="application-views"]')).toHaveText('7.142');
+
+    const sources = overview.getByRole('article', { name: 'Fontes da Visão geral' });
+    await expect(sources.locator('[data-overview-source="users"]')).toContainText('Usuários e novos cadastros');
+    await expect(sources.locator('[data-overview-source="users"]')).toContainText('MySQL · pronto');
+    await expect(sources.locator('[data-overview-source="users"]')).toContainText('01/08/2026 a 30/09/2026');
+    await expect(sources.locator('[data-overview-source="access"]')).toContainText('Acessos · Portal Web');
+    await expect(sources.locator('[data-overview-source="companies"]')).toContainText('Situação em 30/09/2026');
+    await expect(sources.locator('[data-overview-source="portal"]')).toContainText('Microsoft Clarity · parcial');
+    await expect(sources.locator('[data-overview-source="portal"]')).toContainText('Período parcial');
+    await expect(sources.locator('[data-overview-source="application"]')).toContainText('Google Analytics · pronto');
+
+    await expect(overview.locator('[data-overview-value="portal-views-evidence"]')).toHaveText('Estimativa derivada');
+    await expect(overview.locator('[data-overview-value="application-views-evidence"]')).toHaveText('Total observado');
+    await expect(overview.getByText('Visualizações por tela do Portal: Não validado', { exact: true })).toBeVisible();
+    await expect(overview.getByText('O evento login do Google Analytics não substitui Acesso.', { exact: true })).toBeVisible();
+
+    for (const label of ['Loja', 'Pedidos criados', 'Franquias', 'Baixas de usuários', 'Suspensões recentes']) {
+      const gap = overview.locator('[data-overview-gap]').filter({ has: page.getByText(label, { exact: true }) });
+      await expect(gap.getByText('Indisponível', { exact: true })).toBeVisible();
+      await expect(gap.getByText('0', { exact: true })).toHaveCount(0);
+    }
+  });
+
+  test('preserva a versão válida e sinaliza fonte não atualizada na consolidação', async ({ page }) => {
+    await page.goto('/painel.html');
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-overview-value="inactive-companies"]')).toHaveText('8');
+
+    await rm(resolve(testDataPath, 'empresas.csv'));
+    await page.reload();
+
+    await expect(overview.locator('[data-overview-value="inactive-companies"]')).toHaveText('8');
+    await expect(overview.locator('[data-overview-source="companies"]')).toContainText('Fonte não atualizada');
+    await expect(overview.locator('[data-overview-source="companies"]')).toContainText('Situação em 30/09/2026');
+    await expect(overview.locator('[data-overview-source="portal"]')).toContainText('Período parcial');
+    await expect(overview.locator('[data-overview-source="access"]')).toContainText('Fonte validada');
+  });
+
+  test('sem cache, fonte inválida deixa apenas seus indicadores indisponíveis e nunca zero', async ({ page }) => {
+    await writeFile(
+      resolve(testDataPath, 'empresas.csv'),
+      'status;si_status;quantidade\n' +
+        'Operacional;Production;-1\n',
+      'utf8',
+    );
+
+    await page.goto('/painel.html');
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-overview-value="inactive-companies"]')).toHaveText('Indisponível');
+    await expect(overview.locator('[data-overview-source="companies"]')).toContainText('Sem arquivo válido');
+    await expect(overview.locator('[data-overview-value="inactive-companies"]')).not.toHaveText('0');
+    await expect(overview.locator('[data-user-value="current-total"]')).toHaveText('410');
+    await expect(overview.locator('[data-access-value="overview-logins"]')).toHaveText('1.200');
+    await expect(overview.locator('[data-overview-value="portal-views"]')).toHaveText('12.480');
+    await expect(overview.locator('[data-overview-value="application-views"]')).toHaveText('7.142');
   });
 });
