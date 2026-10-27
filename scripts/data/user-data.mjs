@@ -163,15 +163,56 @@ function assertEmpty(row, fields, fileName, rowNumber) {
   }
 }
 
+function containsKnownPii(value) {
+  return /[\u0000-\u001F\u007F]/.test(value)
+    || /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(value)
+    || /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/.test(value)
+    || /\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/.test(value)
+    || /(?:\+?55[\s.-]*)?(?:\(?\d{2}\)?[\s.-]*)?9?\d{4}[\s.-]?\d{4}/.test(value);
+}
+
+function isOpaqueIdentifierSafe(value) {
+  return typeof value === 'string'
+    && /^[A-Za-z0-9][A-Za-z0-9._:-]{2,63}$/.test(value)
+    && !containsKnownPii(value)
+    && !/^\d{10,20}$/.test(value);
+}
+
 function assertOpaqueIdentifier(value, fileName, rowNumber) {
-  if (!value || value.includes('@') || /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/.test(value) || /\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/.test(value)) {
-    throw new DataContractError(`${fileName}: empresa_id_opaco ausente ou contém PII conhecida na linha ${rowNumber}.`);
-  }
-  const digits = value.replace(/\D/g, '');
-  if ([11, 14, 15, 19, 20].includes(digits.length) && /^\d+$/.test(value)) {
-    throw new DataContractError(`${fileName}: empresa_id_opaco se parece com identificador pessoal ou de telecom na linha ${rowNumber}.`);
+  if (!isOpaqueIdentifierSafe(value)) {
+    throw new DataContractError(`${fileName}: empresa_id_opaco ausente, fora do formato seguro ou contém PII conhecida na linha ${rowNumber}.`);
   }
 }
+
+function monthBounds(month) {
+  const [year, monthNumber] = month.split('-').map(Number);
+  const start = `${month}-01`;
+  const end = new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10);
+  return { start, end };
+}
+
+function assertMonthInsidePeriod(month, source, fileName) {
+  const bounds = monthBounds(month);
+  if (bounds.start < source.periodStart || bounds.end > source.periodEnd) {
+    throw new DataContractError(`${fileName}: o mês ${month} está fora do período declarado no manifesto.`);
+  }
+}
+
+function assertDateInsidePeriod(date, source, fileName) {
+  if (date < source.periodStart || date > source.periodEnd) {
+    throw new DataContractError(`${fileName}: a data de referência está fora do período declarado no manifesto.`);
+  }
+}
+
+function validatePartPeriod(name, data, source) {
+  if (name === 'usuarios') {
+    assertMonthInsidePeriod(data.currentMonth, source, 'usuarios.csv');
+    if (data.previousNewUsers !== null) assertMonthInsidePeriod(data.previousMonth, source, 'usuarios.csv');
+    return;
+  }
+  assertDateInsidePeriod(data.referenceDate, source, 'usuarios_inatividade.csv');
+}
+
 
 function previousMonth(month) {
   const [year, monthNumber] = month.split('-').map(Number);
@@ -195,7 +236,7 @@ async function loadManifest(dataDir) {
     if (!['true', 'false'].includes(row.periodo_parcial)) throw new DataContractError(`manifesto_carga.csv: periodo_parcial inválido na linha ${rowNumber}.`);
     if (!['mysql', 'google_analytics', 'microsoft_clarity'].includes(row.fonte_origem)) throw new DataContractError(`manifesto_carga.csv: fonte_origem inválida na linha ${rowNumber}.`);
     if (!['pronto', 'parcial', 'indisponivel'].includes(row.estado_fonte)) throw new DataContractError(`manifesto_carga.csv: estado_fonte inválido na linha ${rowNumber}.`);
-    if (/@/.test(row.observacao)) throw new DataContractError(`manifesto_carga.csv: observação contém PII conhecida na linha ${rowNumber}.`);
+    if (containsKnownPii(row.observacao)) throw new DataContractError(`manifesto_carga.csv: observação contém PII conhecida na linha ${rowNumber}.`);
     entries.set(row.arquivo, { ...row, periodo_parcial: row.periodo_parcial === 'true' });
   });
 
@@ -305,10 +346,44 @@ function sourceFromManifest(entry) {
   };
 }
 
-async function readCache(cacheDir, name) {
+function isNonNegativeInteger(value) {
+  return Number.isSafeInteger(value) && value >= 0;
+}
+
+function isValidCachedSource(source) {
+  return source
+    && source.contractVersion === '1.0'
+    && typeof source.generatedAt === 'string'
+    && /^\d{4}-\d{2}-\d{2}$/.test(source.periodStart)
+    && /^\d{4}-\d{2}-\d{2}$/.test(source.periodEnd)
+    && typeof source.partial === 'boolean'
+    && ['mysql', 'google_analytics', 'microsoft_clarity'].includes(source.origin)
+    && ['pronto', 'parcial'].includes(source.state);
+}
+
+function isValidCachedData(name, data) {
+  if (name === 'usuarios') {
+    return /^\d{4}-(?:0[1-9]|1[0-2])$/.test(data.currentMonth)
+      && /^\d{4}-(?:0[1-9]|1[0-2])$/.test(data.previousMonth)
+      && isNonNegativeInteger(data.currentTotal)
+      && (data.currentNewUsers === null || isNonNegativeInteger(data.currentNewUsers))
+      && (data.previousNewUsers === null || isNonNegativeInteger(data.previousNewUsers))
+      && Array.isArray(data.ranking)
+      && data.ranking.length <= 20
+      && data.ranking.every((item) => item.month === data.currentMonth
+        && isOpaqueIdentifierSafe(item.companyId)
+        && isNonNegativeInteger(item.newUsers)
+        && Number.isInteger(item.position)
+        && item.position >= 1
+        && item.position <= 20);
+  }
+  return /^\d{4}-\d{2}-\d{2}$/.test(data.referenceDate) && isNonNegativeInteger(data.total);
+}
+
+async function readCacheFile(filePath, name) {
   try {
-    const cached = JSON.parse(await readFile(join(cacheDir, `${name}.json`), 'utf8'));
-    if (cached?.schemaVersion !== 1 || cached?.name !== name || !cached.data || !cached.source) return null;
+    const cached = JSON.parse(await readFile(filePath, 'utf8'));
+    if (cached?.schemaVersion !== 1 || cached?.name !== name || !isValidCachedSource(cached.source) || !isValidCachedData(name, cached.data)) return null;
     return cached;
   } catch (error) {
     if (error?.code === 'ENOENT' || error instanceof SyntaxError) return null;
@@ -316,18 +391,37 @@ async function readCache(cacheDir, name) {
   }
 }
 
+async function readCache(cacheDir, name) {
+  const destination = join(cacheDir, `${name}.json`);
+  return (await readCacheFile(destination, name)) ?? readCacheFile(`${destination}.bak`, name);
+}
+
 async function writeCache(cacheDir, name, data, source) {
   await mkdir(cacheDir, { recursive: true });
   const destination = join(cacheDir, `${name}.json`);
+  const backup = `${destination}.bak`;
   const temporary = join(cacheDir, `.${name}.${process.pid}.${Date.now()}.tmp`);
   const payload = JSON.stringify({ schemaVersion: 1, name, data, source });
   await writeFile(temporary, payload, { encoding: 'utf8', flag: 'wx' });
+
+  let movedPrevious = false;
   try {
+    await rm(backup, { force: true });
+    try {
+      await rename(destination, backup);
+      movedPrevious = true;
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+    }
     await rename(temporary, destination);
+    if (movedPrevious) await rm(backup, { force: true });
   } catch (error) {
-    if (error?.code !== 'EEXIST' && error?.code !== 'EPERM') throw error;
-    await rm(destination, { force: true });
-    await rename(temporary, destination);
+    await rm(temporary, { force: true });
+    if (movedPrevious) {
+      await rm(destination, { force: true });
+      await rename(backup, destination);
+    }
+    throw error;
   }
 }
 
@@ -335,6 +429,7 @@ async function loadPart({ cacheDir, fileName, loader, manifest, name }) {
   try {
     const data = await loader();
     const source = sourceFromManifest(manifest.get(fileName));
+    validatePartPeriod(name, data, source);
     await writeCache(cacheDir, name, data, source);
     return { cache: { data, source }, warning: null };
   } catch (error) {

@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
-import { dirname, extname, resolve } from 'node:path';
+import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DataContractError, loadUserData } from './data/user-data.mjs';
 
@@ -17,6 +17,9 @@ const contentTypes = new Map([
   ['.json', 'application/json; charset=utf-8'],
   ['.svg', 'image/svg+xml'],
 ]);
+
+const publicAssetTypes = new Set(['.css', '.js', '.json', '.png', '.svg', '.webp']);
+const assetsRoot = resolve(root, 'assets');
 
 function sendTextResponse(response, status, body = '') {
   response.writeHead(status, {
@@ -65,13 +68,16 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (pathname !== '/' && pathname !== '/painel.html') {
+  const isPanel = pathname === '/' || pathname === '/painel.html';
+  const relativePath = isPanel ? 'painel.html' : pathname.replace(/^\/+/, '');
+  const filePath = resolve(root, relativePath);
+  const isPublicAsset = pathname.startsWith('/assets/')
+    && filePath.startsWith(`${assetsRoot}${sep}`)
+    && publicAssetTypes.has(extname(filePath).toLowerCase());
+  if (!isPanel && !isPublicAsset) {
     sendTextResponse(response, 404, 'Arquivo não encontrado.');
     return;
   }
-
-  const relativePath = 'painel.html';
-  const filePath = resolve(root, relativePath);
 
   try {
     const fileStat = await stat(filePath);
