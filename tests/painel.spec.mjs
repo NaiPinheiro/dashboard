@@ -31,7 +31,7 @@ test('a gerente percorre as seis áreas do MVP do Painel', async ({ page }) => {
 
   await expect(page).toHaveTitle(/Painel de Indicadores/);
   await expect(
-    page.getByText('Dados mistos · Usuários carregados; demais indicadores fictícios'),
+    page.getByText('Dados mistos · Usuários carregados; Portal carregado; demais áreas fictícias'),
   ).toBeVisible();
 
   const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
@@ -106,7 +106,7 @@ test('a gerente vê os indicadores de Usuários vindos de uma carga válida', as
 
 test('uma tentativa inválida preserva a última carga válida de Usuários', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; demais indicadores fictícios')).toBeVisible();
+  await expect(page.getByText('Dados mistos · Usuários carregados; Portal carregado; demais áreas fictícias')).toBeVisible();
 
   await writeFile(
     resolve(testDataPath, 'usuarios.csv'),
@@ -165,7 +165,7 @@ test('sem cache anterior, somente o conjunto inválido aparece como Indisponíve
 
 test('o contrato rejeita duplicidade, total negativo, PII e período inválido sem perder a carga ativa', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; demais indicadores fictícios')).toBeVisible();
+  await expect(page.getByText('Dados mistos · Usuários carregados; Portal carregado; demais áreas fictícias')).toBeVisible();
 
   const invalidAttempts = [
     {
@@ -240,7 +240,7 @@ test('sem JavaScript, indicadores funcionais não exibem valores fictícios', as
 
 test('um backup íntegro recupera a última carga quando a troca do cache é interrompida', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; demais indicadores fictícios')).toBeVisible();
+  await expect(page.getByText('Dados mistos · Usuários carregados; Portal carregado; demais áreas fictícias')).toBeVisible();
 
   const userCache = resolve(testCachePath, 'usuarios.json');
   const userBackup = resolve(testCachePath, 'usuarios.json.bak');
@@ -259,4 +259,146 @@ test('um backup íntegro recupera a última carga quando a troca do cache é int
   const totalCard = usersPanel.locator('article').filter({ hasText: 'Total existente' });
   await expect(usersPanel.getByText('Última carga válida preservada')).toBeVisible();
   await expect(totalCard.getByText('410', { exact: true })).toBeVisible();
+});
+
+
+test('o Portal mostra somente o total derivado e mantém visualizações por tela não validadas', async ({ page }) => {
+  await page.goto('/painel.html');
+  const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+  await navigation.getByRole('tab', { name: 'Telas', exact: true }).click();
+
+  const screensPanel = page.getByRole('tabpanel', { name: 'Telas' });
+  const portalCard = screensPanel.locator('article').filter({ hasText: 'Portal · Lyra M2M' });
+  await expect(portalCard.getByText('12.480', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Estimativa derivada', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Visualizações por tela: Não validado', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Ausência no ranking não representa zero', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('O export geral preserva somente as 12 URLs principais', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Rotas fora do ranking permanecem sem cobertura validada', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Origem: Microsoft Clarity · Estado: parcial', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Abrangência: 01/08/2026 a 30/09/2026', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Período parcial', { exact: true })).toBeVisible();
+
+  await expect(screensPanel.getByText('720', { exact: true })).toHaveCount(0);
+  await expect(screensPanel.getByText('77', { exact: true })).toHaveCount(0);
+  await expect(screensPanel.getByText('900', { exact: true })).toHaveCount(0);
+  await expect(screensPanel.getByText('1.300', { exact: true })).toHaveCount(0);
+  await expect(screensPanel.getByText('50.000', { exact: true })).toHaveCount(0);
+  await expect(screensPanel.getByText('Dashboard', { exact: true })).toHaveCount(0);
+});
+
+test('um telas_portal.csv inválido preserva o cache válido sem expor conteúdo rejeitado', async ({ page }) => {
+  await page.goto('/painel.html');
+  await writeFile(
+    resolve(testDataPath, 'telas_portal.csv'),
+    'periodo;produto;fonte;escopo;metrica;tela_ou_funcao;valor;unidade;evidencia;observacao;email\n' +
+      '2026-08-01 a 2026-09-30;Portal M2M;Microsoft Clarity;producao;visualizacoes_de_pagina_total;segredo@example.com;99999;visualizacoes;derivado;Inválido;segredo@example.com\n',
+    'utf8',
+  );
+
+  const rejectionResponse = await page.request.get('/api/telas-portal');
+  const rejectionPayload = await rejectionResponse.json();
+  expect(rejectionPayload.rejection).toMatchObject({ file: 'telas_portal.csv' });
+  expect(rejectionPayload.rejection.attemptedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  expect(rejectionPayload.rejection.reasons).toEqual([
+    'telas_portal.csv: cabeçalho incompatível ou com colunas extras.',
+  ]);
+  expect(JSON.stringify(rejectionPayload.rejection)).not.toContain('segredo@example.com');
+
+  await page.reload();
+  const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+  await navigation.getByRole('tab', { name: 'Telas', exact: true }).click();
+  const portalCard = page.getByRole('tabpanel', { name: 'Telas' }).locator('article').filter({ hasText: 'Portal · Lyra M2M' });
+  await expect(portalCard.getByText('Última carga válida preservada', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('12.480', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('99.999', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('segredo@example.com', { exact: false })).toHaveCount(0);
+});
+
+test('telas_portal.csv ausente preserva o cache e avisa que a fonte não foi atualizada', async ({ page }) => {
+  await page.goto('/painel.html');
+  await rm(resolve(testDataPath, 'telas_portal.csv'));
+
+  await page.reload();
+  const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+  await navigation.getByRole('tab', { name: 'Telas', exact: true }).click();
+  const portalCard = page.getByRole('tabpanel', { name: 'Telas' }).locator('article').filter({ hasText: 'Portal · Lyra M2M' });
+  await expect(portalCard.getByText('Fonte não atualizada', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('12.480', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Visualizações por tela: Não validado', { exact: true })).toBeVisible();
+});
+
+
+test('sem cache, telas do Portal inválidas ficam indisponíveis e nunca viram zero', async ({ page }) => {
+  await writeFile(
+    resolve(testDataPath, 'telas_portal.csv'),
+    'periodo;produto;fonte;escopo;metrica;tela_ou_funcao;valor;unidade;evidencia;observacao\n' +
+      '2026-08-01 a 2026-09-30;Portal M2M;Microsoft Clarity;producao;visualizacoes_por_tela;Top 12;0;visualizacoes;nao_validado;Ausência não é zero\n',
+    'utf8',
+  );
+
+  await page.goto('/painel.html');
+  const unavailableResponse = await page.request.get('/api/telas-portal');
+  const unavailablePayload = await unavailableResponse.json();
+  expect(unavailablePayload.status).toBe('unavailable');
+  expect(unavailablePayload.indicators.excludedLocalRows).toBeNull();
+  expect(unavailablePayload.indicators.excludedSessionOrEventRows).toBeNull();
+
+  const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+  await navigation.getByRole('tab', { name: 'Telas', exact: true }).click();
+  const portalCard = page.getByRole('tabpanel', { name: 'Telas' }).locator('article').filter({ hasText: 'Portal · Lyra M2M' });
+  await expect(portalCard.getByText('Indisponível', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('0', { exact: true })).toHaveCount(0);
+  await expect(portalCard.getByText('Visualizações por tela: Não validado', { exact: true })).toBeVisible();
+});
+
+
+test('Loja, Pedidos, Franquias e suspensões recentes permanecem sem números inventados', async ({ page }) => {
+  await page.goto('/painel.html');
+
+  const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+  await expect(overview.locator('article').filter({ hasText: 'Pedidos criados' }).getByText('Indisponível', { exact: true })).toBeVisible();
+  await expect(overview.locator('article').filter({ hasText: 'Suspensas' }).getByText('Indisponível', { exact: true })).toBeVisible();
+  await expect(overview.getByText('184', { exact: true })).toHaveCount(0);
+  await expect(overview.getByText('5', { exact: true })).toHaveCount(0);
+
+  const dashboard = page.locator('main');
+  await expect(dashboard.getByText('1.428', { exact: true })).toHaveCount(0);
+  await expect(dashboard.getByText('184 pedidos no período', { exact: true })).toHaveCount(0);
+  await expect(dashboard.getByText('2.740 chips', { exact: true })).toHaveCount(0);
+  await expect(dashboard.getByText('Os logins da Loja aparecem na aba Loja e Pedidos.', { exact: true })).toHaveCount(0);
+
+  const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+  await navigation.getByRole('tab', { name: 'Loja e Pedidos', exact: true }).click();
+  const storePanel = page.getByRole('tabpanel', { name: 'Loja e Pedidos' });
+  await expect(storePanel.locator('.not-available').filter({ hasText: 'Dados futuros' })).toHaveCount(3);
+});
+
+test('os metadados do Portal não sobrepõem o cartão do Aplicativo em 1024x768', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto('/painel.html');
+  await page.getByRole('tablist', { name: 'Áreas do painel' })
+    .getByRole('tab', { name: 'Telas', exact: true })
+    .click();
+
+  const portalCard = page.locator('#portal-screens-card');
+  const applicationCard = page.getByRole('tabpanel', { name: 'Telas' })
+    .locator('article')
+    .filter({ hasText: 'Aplicativo · Lyra M2M' });
+  const layout = await page.evaluate(() => {
+    const portal = document.querySelector('#portal-screens-card').getBoundingClientRect();
+    const application = [...document.querySelectorAll('#screens article')]
+      .find((element) => element.textContent.includes('Aplicativo · Lyra M2M'))
+      .getBoundingClientRect();
+    const metadataChildren = [...document.querySelectorAll('#portal-screens-card .source-file-row > *')]
+      .map((element) => element.getBoundingClientRect());
+    return {
+      cardsStacked: application.top >= portal.bottom - 1,
+      metadataInsidePortal: metadataChildren.every((item) => item.right <= portal.right + 1),
+    };
+  });
+
+  await expect(portalCard).toBeVisible();
+  await expect(applicationCard).toBeVisible();
+  expect(layout.cardsStacked || layout.metadataInsidePortal).toBe(true);
 });

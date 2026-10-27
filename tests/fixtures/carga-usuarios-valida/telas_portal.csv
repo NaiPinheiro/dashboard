@@ -1,0 +1,11 @@
+periodo;produto;fonte;escopo;metrica;tela_ou_funcao;valor;unidade;evidencia;observacao
+2026-08-01 a 2026-09-30;Portal M2M;Microsoft Clarity;producao;visualizacoes_de_pagina_total;Portal consolidado;12480;visualizacoes;derivado;Estimativa por sessões multiplicadas por páginas por sessão
+2026-08-01 a 2026-09-30;Portal M2M;Microsoft Clarity;producao;sessoes_com_url;/dashboard;720;sessoes;observado;Export geral limitado às 12 URLs principais
+2026-08-01 a 2026-09-30;Portal M2M;Microsoft Clarity;producao;screen_view_dashboard;Dashboard;77;eventos;observado;Evento funcional sem equivalência com visualização
+2026-08-01 a 2026-09-30;Portal M2M;Microsoft Clarity;local;sessoes_com_url;http://localhost:3000/dashboard;900;sessoes;observado;Ambiente local excluído da produção
+2026-08-01 a 2026-09-30;Portal M2M;Microsoft Clarity;local;visualizacoes_de_pagina_total;http://localhost:3000;50000;visualizacoes;derivado;Ambiente local excluído da produção
+
+2026-08-01 a 2026-09-30;Portal M2M;Microsoft Clarity;local;sessoes_com_url;https://portal.exemplo.local/dashboard;1300;sessoes;observado;Ambiente local excluído da produção
+2026-08 a 2026-09;Portal M2M;Microsoft Clarity;metodologia;visualizacoes_por_tela;Top 12 URLs;;visualizacoes;nao_validado;Ausência no ranking não representa zero
+2026-08 a 2026-09;Portal M2M;Microsoft Clarity;metodologia;cobertura_exportacao;Amostra agregada;;metodologia;observado;O export geral preserva somente as 12 URLs principais
+2026-08 a 2026-09;Portal M2M;Microsoft Clarity;producao;cobertura_rotas;Rotas fora do ranking;;cobertura;nao_validado;Rotas fora do ranking permanecem sem cobertura validada
