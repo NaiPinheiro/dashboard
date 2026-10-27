@@ -31,7 +31,7 @@ test('a gerente percorre as seis áreas do MVP do Painel', async ({ page }) => {
 
   await expect(page).toHaveTitle(/Painel de Indicadores/);
   await expect(
-    page.getByText('Dados mistos · Usuários carregados; Portal carregado; demais áreas fictícias'),
+    page.getByText('Dados mistos · Usuários carregados; Empresas carregadas; Portal carregado; demais áreas fictícias'),
   ).toBeVisible();
 
   const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
@@ -95,7 +95,7 @@ test('a gerente vê os indicadores de Usuários vindos de uma carga válida', as
   await navigation.getByRole('tab', { name: 'Empresas', exact: true }).click();
   const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
   await expect(companiesPanel.getByText('EMP-001', { exact: true })).toBeVisible();
-  await expect(companiesPanel.getByText('12', { exact: true })).toBeVisible();
+  await expect(companiesPanel.locator('#users-ranking').getByText('12', { exact: true })).toBeVisible();
 
   const privateFileResponse = await page.request.get('/tests/fixtures/carga-usuarios-valida/usuarios.csv');
   expect(privateFileResponse.status()).toBe(404);
@@ -106,7 +106,7 @@ test('a gerente vê os indicadores de Usuários vindos de uma carga válida', as
 
 test('uma tentativa inválida preserva a última carga válida de Usuários', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; Portal carregado; demais áreas fictícias')).toBeVisible();
+  await expect(page.getByText('Dados mistos · Usuários carregados; Empresas carregadas; Portal carregado; demais áreas fictícias')).toBeVisible();
 
   await writeFile(
     resolve(testDataPath, 'usuarios.csv'),
@@ -165,7 +165,7 @@ test('sem cache anterior, somente o conjunto inválido aparece como Indisponíve
 
 test('o contrato rejeita duplicidade, total negativo, PII e período inválido sem perder a carga ativa', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; Portal carregado; demais áreas fictícias')).toBeVisible();
+  await expect(page.getByText('Dados mistos · Usuários carregados; Empresas carregadas; Portal carregado; demais áreas fictícias')).toBeVisible();
 
   const invalidAttempts = [
     {
@@ -240,7 +240,7 @@ test('sem JavaScript, indicadores funcionais não exibem valores fictícios', as
 
 test('um backup íntegro recupera a última carga quando a troca do cache é interrompida', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; Portal carregado; demais áreas fictícias')).toBeVisible();
+  await expect(page.getByText('Dados mistos · Usuários carregados; Empresas carregadas; Portal carregado; demais áreas fictícias')).toBeVisible();
 
   const userCache = resolve(testCachePath, 'usuarios.json');
   const userBackup = resolve(testCachePath, 'usuarios.json.bak');
@@ -401,4 +401,122 @@ test('os metadados do Portal não sobrepõem o cartão do Aplicativo em 1024x768
   await expect(portalCard).toBeVisible();
   await expect(applicationCard).toBeVisible();
   expect(layout.cardsStacked || layout.metadataInsidePortal).toBe(true);
+});
+
+
+
+test('Issue #5 classifica empresas por si_status, mantém status para auditoria e mostra metadados', async ({ page }) => {
+  await page.goto('/painel.html');
+
+  const response = await page.request.get('/api/empresas');
+  expect(response.status()).toBe(200);
+  const payload = await response.json();
+  expect(payload).toMatchObject({
+    status: 'ready',
+    indicators: {
+      active: 24,
+      inactive: 8,
+      suspendedCurrent: 7,
+      suspendedLast30Days: null,
+      excludedWaitApproval: 9,
+      unclassifiedTotal: 11,
+    },
+  });
+  expect(payload.indicators.statusAudit).toContainEqual({
+    status: 'Operacional',
+    siStatus: 'Production',
+    category: 'active',
+    quantity: 12,
+  });
+
+  const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+  await navigation.getByRole('tab', { name: 'Empresas', exact: true }).click();
+  const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
+  await expect(companiesPanel.locator('[data-company-value="active"]')).toHaveText('24');
+  await expect(companiesPanel.locator('[data-company-value="inactive"]')).toHaveText('8');
+  await expect(companiesPanel.locator('[data-company-value="suspended-current"]')).toHaveText('7');
+  await expect(companiesPanel.locator('[data-company-value="suspended-30-days"]')).toHaveText('Indisponível');
+  await expect(companiesPanel.getByText('Status não classificado: novo_status · 11 fora dos totais', { exact: true })).toBeVisible();
+  await expect(companiesPanel.getByText('wait_aprovement · 9 fora dos indicadores', { exact: true })).toBeVisible();
+  await expect(companiesPanel.getByText('Operacional', { exact: true }).first()).toBeVisible();
+  await expect(companiesPanel.getByText('Production', { exact: true })).toBeVisible();
+  await expect(companiesPanel.getByText('Origem: MySQL · Estado: pronto', { exact: true })).toBeVisible();
+  await expect(companiesPanel.getByText('Referência: 30/09/2026', { exact: true })).toBeVisible();
+  await expect(companiesPanel.getByText('Gerado em:', { exact: false })).toBeVisible();
+  await expect(companiesPanel.getByText('empresas.csv é uma fotografia atual e não informa quando ocorreu cada suspensão.', { exact: true })).toBeVisible();
+});
+
+
+test('Issue #5 preserva o cache válido quando empresas.csv é rejeitado sem expor linhas', async ({ page }) => {
+  await page.goto('/painel.html');
+  await writeFile(
+    resolve(testDataPath, 'empresas.csv'),
+    'status;si_status;quantidade;email\n' +
+      'Operacional;Production;999;segredo@example.com\n',
+    'utf8',
+  );
+
+  const response = await page.request.get('/api/empresas');
+  const payload = await response.json();
+  expect(payload.status).toBe('stale');
+  expect(payload.indicators.active).toBe(24);
+  expect(payload.rejection).toMatchObject({ file: 'empresas.csv' });
+  expect(payload.rejection.attemptedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  expect(payload.rejection.reasons).toEqual([
+    'empresas.csv: cabeçalho incompatível ou com colunas extras.',
+  ]);
+  expect(JSON.stringify(payload.rejection)).not.toContain('segredo@example.com');
+
+  await page.reload();
+  await page.getByRole('tablist', { name: 'Áreas do painel' })
+    .getByRole('tab', { name: 'Empresas', exact: true })
+    .click();
+  const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
+  await expect(companiesPanel.locator('#companies-source-state')).toHaveText('Última carga válida preservada');
+  await expect(companiesPanel.locator('[data-company-value="active"]')).toHaveText('24');
+  await expect(companiesPanel.getByText('999', { exact: true })).toHaveCount(0);
+  await expect(companiesPanel.getByText('segredo@example.com', { exact: false })).toHaveCount(0);
+});
+
+
+test('Issue #5 avisa quando empresas.csv está ausente e preserva a última versão válida', async ({ page }) => {
+  await page.goto('/painel.html');
+  await rm(resolve(testDataPath, 'empresas.csv'));
+
+  await page.reload();
+  await page.getByRole('tablist', { name: 'Áreas do painel' })
+    .getByRole('tab', { name: 'Empresas', exact: true })
+    .click();
+  const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
+  await expect(companiesPanel.getByText('Fonte não atualizada', { exact: true })).toBeVisible();
+  await expect(companiesPanel.locator('[data-company-value="active"]')).toHaveText('24');
+  await expect(companiesPanel.locator('[data-company-value="suspended-30-days"]')).toHaveText('Indisponível');
+});
+
+
+test('Issue #5 sem cache deixa empresas inválidas indisponíveis e nunca converte ausência em zero', async ({ page }) => {
+  await writeFile(
+    resolve(testDataPath, 'empresas.csv'),
+    'status;si_status;quantidade\n' +
+      'Operacional;Production;-1\n',
+    'utf8',
+  );
+
+  await page.goto('/painel.html');
+  const response = await page.request.get('/api/empresas');
+  const payload = await response.json();
+  expect(payload.status).toBe('unavailable');
+  expect(payload.indicators.active).toBeNull();
+  expect(payload.indicators.inactive).toBeNull();
+  expect(payload.indicators.suspendedCurrent).toBeNull();
+  expect(payload.indicators.suspendedLast30Days).toBeNull();
+
+  await page.getByRole('tablist', { name: 'Áreas do painel' })
+    .getByRole('tab', { name: 'Empresas', exact: true })
+    .click();
+  const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
+  await expect(companiesPanel.locator('[data-company-value="active"]')).toHaveText('Indisponível');
+  await expect(companiesPanel.locator('[data-company-value="inactive"]')).toHaveText('Indisponível');
+  await expect(companiesPanel.locator('[data-company-value="suspended-current"]')).toHaveText('Indisponível');
+  await expect(companiesPanel.getByText('0', { exact: true })).toHaveCount(0);
 });

@@ -1,0 +1,10 @@
+status;si_status;quantidade
+Operacional;Production;12
+Homologação;TEST;3
+Operacional;activated;4
+Operacional;active;5
+Cancelada;cancelled;6
+Inativa;Inactive;2
+Bloqueada;SUSPENDED_DEFAULTER;7
+Pendente;wait_aprovement;9
+Legado;novo_status;11
