@@ -9,3 +9,9 @@ docs/handoffs/
 
 *.log
 .DS_Store
+
+# Dados locais, cache validado e áreas temporárias de teste
+dados/
+.painel-cache/
+tests/.data/
+tests/.cache/

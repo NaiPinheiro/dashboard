@@ -22,6 +22,7 @@
     .screen-source{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px}.screen-source .status-dot{width:7px;height:7px}.not-available{min-height:192px;display:grid;place-items:center;text-align:center;background:#f8fafb;border:1px dashed #b9c9d5;border-radius:var(--radius);padding:22px}.not-available .svg-icon{width:30px;height:30px;color:var(--muted);margin-bottom:8px}.not-available strong{display:block;color:var(--navy)}.not-available p{max-width:45ch;color:var(--muted);font-size:11px;margin:6px auto 0}
     .dev-empty{min-height:460px;display:grid;place-items:center;text-align:center;background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:40px}.dev-empty .illustration{width:90px;height:90px;border-radius:24px;background:var(--soft);color:var(--blue);display:grid;place-items:center;margin:0 auto 20px}.dev-empty .svg-icon{width:42px;height:42px}.dev-empty h2{font-size:24px;color:var(--navy);margin:0}.dev-empty p{max-width:57ch;color:var(--muted);margin:10px auto 0}.future-tags{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:20px}.future-tags span{border:1px solid var(--line);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:11px;background:#f8fafb}
     .footer-note{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-top:18px;color:var(--muted);font-size:10px}.footer-note strong{color:var(--navy)}
+    .source-summary{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.source-summary-main{display:flex;align-items:center;gap:10px}.source-summary-main strong{display:block;color:var(--navy);font-size:13px}.source-summary-main small{display:block;color:var(--muted);margin-top:2px}.source-summary-details{display:flex;gap:8px;flex-wrap:wrap}.source-summary .source-tag{font-size:11px}.unavailable-value{font-size:16px!important;letter-spacing:0!important}.load-warning{color:var(--amber);font-weight:700}
     @media(max-width:1180px){.topbar{align-items:flex-start;flex-wrap:wrap}.demo-flag{margin-right:0}.filters{width:100%}.filter{flex:1}.filter select,.filter:first-child select{width:100%;min-width:0}.feature-metric{grid-column:span 6}.feature-metric.orders{grid-column:1/-1}.status-row{grid-template-columns:repeat(3,1fr)}.span-3{grid-column:span 6}.span-4{grid-column:span 6}.span-5,.span-7{grid-column:span 12}}
     @media(max-width:820px){.topbar{padding:14px 18px;gap:14px}.identity{min-width:auto}.demo-flag{order:2}.filters{order:3;display:grid;grid-template-columns:1fr 1fr}.filter:first-child{grid-column:1/-1}.tabbar{padding:0 12px}.tab{padding:0 12px}main{padding:18px}.feature-metric{grid-column:1/-1}.status-row{grid-template-columns:1fr 1fr}.content-grid,.split-hero{grid-template-columns:1fr}.summary-band{grid-template-columns:1fr 1fr}.band-metric{border-left:0;padding-left:0;border-top:1px solid #416785;padding-top:10px}.span-3,.span-4,.span-5,.span-6,.span-7,.span-8{grid-column:1/-1}.page-heading{flex-direction:column}.bar-row{grid-template-columns:100px 1fr 55px}}
     @media(max-width:520px){.filters{grid-template-columns:1fr}.filter:first-child{grid-column:auto}.status-row{grid-template-columns:1fr}.summary-band{grid-template-columns:1fr}.footer-note{align-items:flex-start;flex-direction:column}.metric-value{font-size:34px}.page-heading h1{font-size:22px}}
@@ -47,7 +48,7 @@
       <div class="brand-mark"><svg class="svg-icon" aria-hidden="true"><use href="#i-chart"/></svg></div>
       <div><strong>Painel de Indicadores</strong><small>Lyra M2M</small></div>
     </div>
-    <div class="demo-flag"><span class="demo-dot"></span> MVP visual · todos os dados são fictícios</div>
+    <div class="demo-flag" id="data-mode" role="status" aria-live="polite"><span class="demo-dot"></span> Carregando dados de Usuários…</div>
     <div class="filters" aria-label="Filtros ilustrativos">
       <div class="filter"><label for="periodo">Período</label><select id="periodo" data-demo-filter><option>Setembro 2026</option><option>2ª quinzena · Set/26</option><option>Agosto 2026</option></select></div>
       <div class="filter"><label for="produto">Produto</label><select id="produto" data-demo-filter><option>Todos os produtos</option><option>Portal</option><option>Loja</option><option>Aplicativo</option></select></div>
@@ -68,13 +69,13 @@
     <section id="overview" class="panel active" role="tabpanel" aria-labelledby="tab-overview">
       <div class="page-heading"><div><h1>Visão geral de setembro</h1><p>Leitura dos indicadores da Lyra M2M, comparada a agosto de 2026.</p></div><div class="period-chip"><span class="status-dot"></span>Último mês fechado</div></div>
       <div class="hero-grid numbers">
-        <article class="feature-metric"><div class="metric-label"><span>Total de usuários</span><svg class="svg-icon" aria-hidden="true"><use href="#i-users"/></svg></div><div class="metric-main"><span class="metric-value">396</span><span class="delta good">+25 · +6,7%</span></div><div class="metric-caption">371 usuários no período anterior</div><div class="pulse" aria-label="Atual 396; anterior 371"><div class="pulse-line"></div><span class="pulse-prev" style="left:48%"></span><span class="pulse-now" style="left:76%"></span></div><div class="pulse-legend"><span>Anterior · 371</span><span>Atual · 396</span></div></article>
+        <article class="feature-metric"><div class="metric-label"><span>Total de usuários</span><svg class="svg-icon" aria-hidden="true"><use href="#i-users"/></svg></div><div class="metric-main"><span class="metric-value" data-user-value="current-total">396</span><span class="delta neutral" data-user-value="total-state">Carregando</span></div><div class="metric-caption" data-user-value="total-caption">Aguardando a Pasta de Dados</div><div class="pulse" data-user-value="total-pulse" hidden></div></article>
         <article class="feature-metric access"><div class="metric-label"><span>Logins realizados</span><svg class="svg-icon" aria-hidden="true"><use href="#i-access"/></svg></div><div class="metric-main"><span class="metric-value">6.534</span><span class="delta good">+522 · +8,7%</span></div><div class="metric-caption">296 usuários únicos acessaram</div><div class="pulse" aria-label="Atual 6.534; anterior 6.012"><div class="pulse-line"></div><span class="pulse-prev" style="left:44%"></span><span class="pulse-now" style="left:80%"></span></div><div class="pulse-legend"><span>Anterior · 6.012</span><span>Atual · 6.534</span></div></article>
         <article class="feature-metric orders"><div class="metric-label"><span>Pedidos criados</span><svg class="svg-icon" aria-hidden="true"><use href="#i-orders"/></svg></div><div class="metric-main"><span class="metric-value">184</span><span class="delta neutral">+19 · +11,5%</span></div><div class="metric-caption">116 pelo cliente · 68 pelo Comercial</div><div class="pulse" aria-label="Atual 184; anterior 165"><div class="pulse-line"></div><span class="pulse-prev" style="left:45%"></span><span class="pulse-now" style="left:78%"></span></div><div class="pulse-legend"><span>Anterior · 165</span><span>Atual · 184</span></div></article>
         <div class="status-row">
-          <article class="stat"><div class="stat-top"><span>Novos usuários</span><svg class="svg-icon" aria-hidden="true"><use href="#i-users"/></svg></div><strong class="stat-value">42</strong><div class="stat-foot"><span>Anterior 31</span><span class="trend-good">+11 · +35,5%</span></div></article>
-          <article class="stat"><div class="stat-top"><span>Baixas de usuários</span><svg class="svg-icon" aria-hidden="true"><use href="#i-users"/></svg></div><strong class="stat-value">9</strong><div class="stat-foot"><span>Anterior 12</span><span class="trend-good">−3 · −25,0%</span></div></article>
-          <article class="stat"><div class="stat-top"><span>Usuários inativos</span><svg class="svg-icon" aria-hidden="true"><use href="#i-pause"/></svg></div><strong class="stat-value">58</strong><div class="stat-foot"><span>Sem acesso há 30 dias</span><span class="trend-bad">+7</span></div></article>
+          <article class="stat"><div class="stat-top"><span>Novos usuários</span><svg class="svg-icon" aria-hidden="true"><use href="#i-users"/></svg></div><strong class="stat-value" data-user-value="new-users">42</strong><div class="stat-foot"><span data-user-value="new-users-previous">Anterior 31</span><span class="trend-good" data-user-value="new-users-delta">+11 · +35,5%</span></div></article>
+          <article class="stat"><div class="stat-top"><span>Baixas de usuários</span><svg class="svg-icon" aria-hidden="true"><use href="#i-users"/></svg></div><strong class="stat-value unavailable-value">Indisponível</strong><div class="stat-foot"><span>Sem fonte temporal</span><span class="trend-warn">Pendente</span></div></article>
+          <article class="stat"><div class="stat-top"><span>Usuários inativos</span><svg class="svg-icon" aria-hidden="true"><use href="#i-pause"/></svg></div><strong class="stat-value" data-user-value="inactive-30">58</strong><div class="stat-foot"><span>Sem acesso há 30 dias</span><span data-user-value="inactivity-reference">Referência pendente</span></div></article>
           <article class="stat"><div class="stat-top"><span>Empresas inativas</span><svg class="svg-icon" aria-hidden="true"><use href="#i-company"/></svg></div><strong class="stat-value">11</strong><div class="stat-foot"><span>Critério completo</span><span class="trend-bad">+2</span></div></article>
           <article class="stat"><div class="stat-top"><span>Suspensas</span><svg class="svg-icon" aria-hidden="true"><use href="#i-alert"/></svg></div><strong class="stat-value">5</strong><div class="stat-foot"><span>Inadimplência · 30 dias</span><span class="trend-warn">Atenção</span></div></article>
         </div>
@@ -86,12 +87,13 @@
     </section>
 
     <section id="users" class="panel" role="tabpanel" aria-labelledby="tab-users" hidden>
-      <div class="page-heading"><div><h1>Usuários e Acessos</h1><p>Estoque, movimento e frequência de uso vistos na mesma leitura.</p></div><div class="period-chip"><span class="status-dot"></span>Setembro 2026 × Agosto 2026</div></div>
+      <div class="page-heading"><div><h1>Usuários e Acessos</h1><p>Estoque, movimento e frequência de uso vistos na mesma leitura.</p></div><div class="period-chip" id="users-period"><span class="status-dot"></span>Aguardando carga</div></div>
       <div class="section-grid numbers">
-        <article class="card compact-kpi span-3"><div class="stat-top"><span>Total existente</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big">396</div><div class="compare"><span>Anterior <strong>371</strong></span><span class="trend-good">+25 · +6,7%</span></div></article>
-        <article class="card compact-kpi span-3"><div class="stat-top"><span>Novos usuários</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big">42</div><div class="compare"><span>Anterior <strong>31</strong></span><span class="trend-good">+11 · +35,5%</span></div></article>
-        <article class="card compact-kpi span-3"><div class="stat-top"><span>Baixas</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big">9</div><div class="compare"><span>Anterior <strong>12</strong></span><span class="trend-good">−3 · −25,0%</span></div></article>
-        <article class="card compact-kpi span-3"><div class="stat-top"><span>Inativos · 30 dias</span><svg class="svg-icon"><use href="#i-pause"/></svg></div><div class="big">58</div><div class="compare"><span>Anterior <strong>51</strong></span><span class="trend-bad">+7 · +13,7%</span></div></article>
+        <article class="card source-summary span-12" aria-label="Estado da fonte de Usuários"><div class="source-summary-main"><span class="status-dot"></span><div><strong id="users-source-state">Validando a Pasta de Dados</strong><small id="users-source-message">Os indicadores aparecem somente após a validação integral dos arquivos.</small></div></div><div class="source-summary-details"><span class="source-tag" id="users-source-origin">Fonte pendente</span><span class="source-tag" id="users-source-period">Período pendente</span><span class="source-tag" id="users-source-partial">Parcialidade pendente</span></div></article>
+        <article class="card compact-kpi span-3"><div class="stat-top"><span>Total existente</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big" data-user-value="current-total">396</div><div class="compare"><span data-user-value="total-caption">Fotografia atual</span><span data-user-value="total-state">Carregando</span></div></article>
+        <article class="card compact-kpi span-3"><div class="stat-top"><span>Novos usuários</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big" data-user-value="new-users">42</div><div class="compare"><span data-user-value="new-users-previous">Anterior 31</span><span class="trend-good" data-user-value="new-users-delta">+11 · +35,5%</span></div></article>
+        <article class="card compact-kpi span-3"><div class="stat-top"><span>Baixas</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big unavailable-value">Indisponível</div><div class="compare"><span>Sem fonte temporal</span><span class="trend-warn">Pendente</span></div></article>
+        <article class="card compact-kpi span-3"><div class="stat-top"><span>Inativos · 30 dias</span><svg class="svg-icon"><use href="#i-pause"/></svg></div><div class="big" data-user-value="inactive-30">58</div><div class="compare"><span>Fotografia</span><span data-user-value="inactivity-reference">Referência pendente</span></div></article>
         <article class="card span-7"><div class="card-header"><div><h2>Logins por mês</h2><div class="card-sub">Total de entradas bem-sucedidas</div></div><span class="source-tag">6.534 em setembro</span></div><svg class="line-chart" viewBox="0 0 780 190" role="img" aria-label="Tendência mensal de logins"><path class="chart-grid" d="M42 20H760M42 70H760M42 120H760M42 170H760"/><path class="chart-area" d="M42 143L100 137L158 129L216 133L274 118L332 111L390 101L448 94L506 88L564 74L622 69L680 58L738 42L738 170L42 170Z"/><path class="chart-line" d="M42 143L100 137L158 129L216 133L274 118L332 111L390 101L448 94L506 88L564 74L622 69L680 58L738 42"/><g class="axis-label"><text x="42" y="186">Out/25</text><text x="210" y="186">Jan/26</text><text x="384" y="186">Abr/26</text><text x="558" y="186">Jul/26</text><text x="710" y="186">Set/26</text></g></svg></article>
         <article class="card span-5"><div class="card-header"><div><h2>Acessos por produto</h2><div class="card-sub">Logins totais · Lyra M2M</div></div></div><div class="bars"><div class="bar-row"><span class="bar-label">Portal</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-value">3.482</span></div><div class="bar-row"><span class="bar-label">Aplicativo</span><div class="bar-track"><div class="bar-fill cyan" style="width:47%"></div></div><span class="bar-value">1.624</span></div><div class="bar-row"><span class="bar-label">Loja</span><div class="bar-track"><div class="bar-fill green" style="width:41%"></div></div><span class="bar-value">1.428</span></div></div><div class="footer-note"><span>Usuários únicos no período</span><strong>296</strong></div></article>
       </div>
@@ -102,7 +104,7 @@
       <div class="section-grid numbers">
         <div class="summary-band span-12"><div><h2>Saúde da base de empresas</h2><p>Status da base Lyra M2M</p></div><div class="band-metric"><small>Ativas</small><strong>54</strong></div><div class="band-metric"><small>Inativas</small><strong>11</strong></div><div class="band-metric"><small>Suspensas · 30 dias</small><strong>5</strong></div></div>
         <article class="card span-7"><div class="card-header"><div><h2>Empresas que mais acessaram</h2><div class="card-sub">Ordenadas por logins; usuários únicos como contexto</div></div><span class="source-tag">Setembro 2026</span></div><table><thead><tr><th>#</th><th>Empresa cliente</th><th>Logins</th><th>Usuários</th></tr></thead><tbody><tr><td><span class="rank">1</span></td><td><div class="company-cell"><span class="company-avatar">AH</span>Agro Horizonte</div></td><td>612</td><td>28</td></tr><tr><td><span class="rank">2</span></td><td><div class="company-cell"><span class="company-avatar">SP</span>Saúde Ponto</div></td><td>544</td><td>24</td></tr><tr><td><span class="rank">3</span></td><td><div class="company-cell"><span class="company-avatar">LA</span>Logística Aurora</div></td><td>438</td><td>19</td></tr><tr><td><span class="rank">4</span></td><td><div class="company-cell"><span class="company-avatar">VS</span>Varejo Serra</div></td><td>391</td><td>17</td></tr><tr><td><span class="rank">5</span></td><td><div class="company-cell"><span class="company-avatar">CS</span>Conexão Sul</div></td><td>342</td><td>15</td></tr></tbody></table></article>
-        <article class="card span-5"><div class="card-header"><div><h2>Mais usuários criados</h2><div class="card-sub">Novas contas no período</div></div></div><div class="bars"><div class="bar-row"><span class="bar-label">Logística Aurora</span><div class="bar-track"><div class="bar-fill cyan" style="width:100%"></div></div><span class="bar-value">11</span></div><div class="bar-row"><span class="bar-label">Agro Horizonte</span><div class="bar-track"><div class="bar-fill cyan" style="width:73%"></div></div><span class="bar-value">8</span></div><div class="bar-row"><span class="bar-label">Saúde Ponto</span><div class="bar-track"><div class="bar-fill cyan" style="width:55%"></div></div><span class="bar-value">6</span></div><div class="bar-row"><span class="bar-label">Conexão Sul</span><div class="bar-track"><div class="bar-fill cyan" style="width:45%"></div></div><span class="bar-value">5</span></div><div class="bar-row"><span class="bar-label">Varejo Serra</span><div class="bar-track"><div class="bar-fill cyan" style="width:36%"></div></div><span class="bar-value">4</span></div></div></article>
+        <article class="card span-5"><div class="card-header"><div><h2>Mais usuários criados</h2><div class="card-sub">Novas contas no período</div></div><span class="source-tag" id="users-ranking-period">Carga pendente</span></div><div class="bars" id="users-ranking" aria-live="polite"><div class="bar-row"><span class="bar-label">Aguardando carga</span><div class="bar-track"><div class="bar-fill cyan" style="width:0%"></div></div><span class="bar-value">—</span></div></div></article>
         <article class="card span-12"><div class="card-header"><div><h2>Empresas que pedem atenção</h2><div class="card-sub">Inatividade e suspensão são critérios diferentes</div></div></div><table><thead><tr><th>Empresa cliente</th><th>Último acesso</th><th>Usuários</th><th>Status</th></tr></thead><tbody><tr><td>Norte Monitoramento</td><td>38 dias</td><td>Todos inativos</td><td><span class="status inactive">Inativa</span></td></tr><tr><td>Rota Segura</td><td>44 dias</td><td>Todos inativos</td><td><span class="status inactive">Inativa</span></td></tr><tr><td>Campo Digital</td><td>12 dias</td><td>4 ativos</td><td><span class="status suspended">Suspensa por inadimplência</span></td></tr></tbody></table></article>
       </div>
     </section>
@@ -135,7 +137,7 @@
       <div class="dev-empty"><div><div class="illustration"><svg class="svg-icon" aria-hidden="true"><use href="#i-dev"/></svg></div><h2>Indicadores em definição</h2><p>Esta área não apresenta números fictícios porque entregas, qualidade e fluxo da equipe ainda precisam de critérios próprios. Ela será especificada depois da aprovação visual dos indicadores de produto.</p><div class="future-tags" aria-label="Temas futuros"><span>Entregas</span><span>Prazo médio</span><span>Qualidade</span><span>Bugs</span><span>Retrabalho</span></div></div></div>
     </section>
 
-    <div class="footer-note"><span><strong>MVP visual</strong> · filtros ilustrativos e dados fixos</span><span>Nomes, empresas e números são integralmente fictícios.</span></div>
+    <div class="footer-note"><span><strong>Carga parcial</strong> · Usuários usam a Pasta de Dados; demais áreas continuam no baseline fictício</span><span>Identificadores de empresas são opacos.</span></div>
   </main>
 
   <script>
@@ -153,6 +155,120 @@
     });
     const note=document.getElementById('filter-note');let noteTimer;
     document.querySelectorAll('[data-demo-filter]').forEach(select=>select.addEventListener('change',()=>{clearTimeout(noteTimer);note.classList.add('show');noteTimer=setTimeout(()=>note.classList.remove('show'),3200)}));
+
+    const numberFormatter=new Intl.NumberFormat('pt-BR');
+    const monthFormatter=new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'});
+    const dateFormatter=new Intl.DateTimeFormat('pt-BR',{timeZone:'UTC'});
+    const sourceNames={mysql:'MySQL',google_analytics:'Google Analytics',microsoft_clarity:'Microsoft Clarity'};
+
+    function formatMonth(month){
+      const [year,monthNumber]=month.split('-').map(Number);
+      const label=monthFormatter.format(new Date(Date.UTC(year,monthNumber-1,1)));
+      return label.charAt(0).toUpperCase()+label.slice(1);
+    }
+    function formatDate(date){return dateFormatter.format(new Date(`${date}T00:00:00Z`))}
+    function setUserValue(name,value,unavailable=false){
+      document.querySelectorAll(`[data-user-value="${name}"]`).forEach(element=>{
+        element.textContent=value;
+        element.classList.toggle('unavailable-value',unavailable);
+      });
+    }
+    function renderNewUsers(indicators){
+      setUserValue('new-users',indicators.currentNewUsers===null?'Indisponível':numberFormatter.format(indicators.currentNewUsers),indicators.currentNewUsers===null);
+      const previous=indicators.previousNewUsers;
+      setUserValue('new-users-previous',previous===null?'Período anterior indisponível':`Anterior ${numberFormatter.format(previous)}`,previous===null);
+      if(indicators.currentNewUsers===null||previous===null){
+        setUserValue('new-users-delta','Sem comparação',true);
+        return;
+      }
+      const difference=indicators.currentNewUsers-previous;
+      const sign=difference>0?'+':'';
+      const percentage=previous===0?null:(difference/previous)*100;
+      const label=percentage===null?`${sign}${numberFormatter.format(difference)} · base anterior zero`:`${sign}${numberFormatter.format(difference)} · ${sign}${percentage.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}%`;
+      setUserValue('new-users-delta',label);
+    }
+    function renderRanking(indicators){
+      const container=document.getElementById('users-ranking');
+      container.replaceChildren();
+      const maximum=Math.max(...indicators.ranking.map(item=>item.newUsers),0);
+      if(indicators.ranking.length===0){
+        const empty=document.createElement('span');
+        empty.className='bar-label';
+        empty.textContent='Ranking indisponível para o período';
+        container.append(empty);
+        return;
+      }
+      indicators.ranking.forEach(item=>{
+        const row=document.createElement('div');
+        row.className='bar-row';
+        const label=document.createElement('span');
+        label.className='bar-label';
+        label.textContent=item.companyId;
+        const track=document.createElement('div');
+        track.className='bar-track';
+        const fill=document.createElement('div');
+        fill.className='bar-fill cyan';
+        fill.style.width=`${Math.round((item.newUsers/maximum)*100)}%`;
+        track.append(fill);
+        const value=document.createElement('span');
+        value.className='bar-value';
+        value.textContent=numberFormatter.format(item.newUsers);
+        row.append(label,track,value);
+        container.append(row);
+      });
+    }
+    function renderLoadedUsers(payload){
+      const {source,inactivitySource,indicators}=payload;
+      const preserved=payload.status==='stale';
+      const partial=payload.status==='partial';
+      const visibleSource=source??inactivitySource;
+      document.getElementById('data-mode').lastChild.textContent=preserved?' Carga parcial · Última carga válida de Usuários preservada':partial?' Carga parcial · Usuários parcialmente disponíveis':' Carga parcial · Usuários carregados; demais dados fictícios';
+      document.getElementById('users-source-state').textContent=preserved?'Última carga válida preservada':partial?'Dados de Usuários parcialmente disponíveis':'Dados de Usuários carregados';
+      document.getElementById('users-source-message').textContent=(preserved||partial)?(payload.warnings?.[0]??'Um dos arquivos não possui versão válida.'):'Carga validada integralmente e ativa.';
+      document.getElementById('users-source-origin').textContent=visibleSource?`${sourceNames[visibleSource.origin]??visibleSource.origin} · ${visibleSource.state}`:'Fonte não ativada';
+      document.getElementById('users-source-period').textContent=visibleSource?`${formatDate(visibleSource.periodStart)} a ${formatDate(visibleSource.periodEnd)}`:'Período indisponível';
+      document.getElementById('users-source-partial').textContent=visibleSource?(visibleSource.partial?'Período parcial':'Período completo'):'Sem carga válida';
+      document.getElementById('users-period').lastChild.textContent=indicators.currentMonth?`${formatMonth(indicators.currentMonth)} × ${formatMonth(indicators.previousMonth)}`:'Total e ranking indisponíveis';
+      document.getElementById('users-ranking-period').textContent=indicators.currentMonth?formatMonth(indicators.currentMonth):'Indisponível';
+      setUserValue('current-total',indicators.currentTotal===null?'Indisponível':numberFormatter.format(indicators.currentTotal),indicators.currentTotal===null);
+      setUserValue('total-state',indicators.currentTotal===null?'Sem carga válida':'Fotografia atual',indicators.currentTotal===null);
+      setUserValue('total-caption',indicators.currentTotal===null?'Aguardando usuarios.csv':'Sem série histórica do total',indicators.currentTotal===null);
+      setUserValue('inactive-30',indicators.inactive30Days===null?'Indisponível':numberFormatter.format(indicators.inactive30Days),indicators.inactive30Days===null);
+      setUserValue('inactivity-reference',indicators.inactivityReferenceDate?formatDate(indicators.inactivityReferenceDate):'Sem referência',!indicators.inactivityReferenceDate);
+      renderNewUsers(indicators);
+      renderRanking(indicators);
+    }
+    function renderUnavailableUsers(message){
+      document.getElementById('data-mode').lastChild.textContent=' Carga parcial · Usuários indisponíveis; demais dados fictícios';
+      document.getElementById('users-source-state').textContent='Dados de Usuários indisponíveis';
+      document.getElementById('users-source-message').textContent=message;
+      document.getElementById('users-source-origin').textContent='Fonte não ativada';
+      document.getElementById('users-source-period').textContent='Período indisponível';
+      document.getElementById('users-source-partial').textContent='Sem carga válida';
+      document.getElementById('users-period').lastChild.textContent='Período indisponível';
+      document.getElementById('users-ranking-period').textContent='Indisponível';
+      ['current-total','new-users','inactive-30'].forEach(name=>setUserValue(name,'Indisponível',true));
+      setUserValue('total-state','Sem carga válida',true);
+      setUserValue('total-caption','Aguardando arquivos válidos',true);
+      setUserValue('new-users-previous','Período anterior indisponível',true);
+      setUserValue('new-users-delta','Sem comparação',true);
+      setUserValue('inactivity-reference','Sem referência',true);
+      renderRanking({ranking:[]});
+    }
+    async function loadUsers(){
+      try{
+        const response=await fetch('/api/usuarios',{cache:'no-store'});
+        const payload=await response.json();
+        if(!response.ok||payload.status==='unavailable'){
+          renderUnavailableUsers(payload.errors?.[0]??'A carga não pôde ser validada.');
+          return;
+        }
+        renderLoadedUsers(payload);
+      }catch{
+        renderUnavailableUsers('Não foi possível ler a Pasta de Dados.');
+      }
+    }
+    loadUsers();
   </script>
 </body>
 </html>

@@ -1,9 +1,12 @@
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
-import { dirname, extname, resolve, sep } from 'node:path';
+import { dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DataContractError, loadUserData } from './data/user-data.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const dataDir = resolve(root, process.env.DATA_DIR ?? 'dados');
+const cacheDir = resolve(root, process.env.CACHE_DIR ?? '.painel-cache');
 const host = '127.0.0.1';
 const port = Number.parseInt(process.env.PORT ?? '8792', 10);
 
@@ -23,6 +26,15 @@ function sendTextResponse(response, status, body = '') {
   response.end(body);
 }
 
+function sendJsonResponse(response, status, body, method = 'GET') {
+  response.writeHead(status, {
+    'Cache-Control': 'no-store',
+    'Content-Type': 'application/json; charset=utf-8',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  response.end(method === 'HEAD' ? undefined : JSON.stringify(body));
+}
+
 const server = createServer(async (request, response) => {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     response.setHeader('Allow', 'GET, HEAD');
@@ -38,12 +50,28 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  const relativePath = pathname === '/' ? 'painel.html' : pathname.replace(/^\/+/, '');
-  const filePath = resolve(root, relativePath);
-  if (filePath !== root && !filePath.startsWith(`${root}${sep}`)) {
-    sendTextResponse(response, 403, 'Acesso negado.');
+  if (pathname === '/api/usuarios') {
+    try {
+      const data = await loadUserData(dataDir, cacheDir);
+      sendJsonResponse(response, 200, data, request.method);
+    } catch (error) {
+      if (error instanceof DataContractError) {
+        sendJsonResponse(response, 422, { status: 'unavailable', errors: [error.message] }, request.method);
+        return;
+      }
+      console.error(error);
+      sendJsonResponse(response, 500, { status: 'unavailable', errors: ['Falha interna ao carregar Usuários.'] }, request.method);
+    }
     return;
   }
+
+  if (pathname !== '/' && pathname !== '/painel.html') {
+    sendTextResponse(response, 404, 'Arquivo não encontrado.');
+    return;
+  }
+
+  const relativePath = 'painel.html';
+  const filePath = resolve(root, relativePath);
 
   try {
     const fileStat = await stat(filePath);

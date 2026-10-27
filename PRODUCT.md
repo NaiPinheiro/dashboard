@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-HTML, CSS e JavaScript estáticos em um arquivo local. O MVP visual não usa framework ou backend. A versão funcional receberá arquivos por uma Pasta de Dados local, sem conexão direta com banco, API ou outro aplicativo.
+HTML, CSS e JavaScript sem framework, servidos por um processo Node.js local restrito a `127.0.0.1`. A primeira fatia funcional lê arquivos agregados de Usuários em uma Pasta de Dados local e mantém um cache local da última carga válida, sem conexão direta com banco, API ou outro aplicativo.
 
 ## Users
 
@@ -16,7 +16,7 @@ A usuária principal é uma gerente de produto da Lyra M2M que apresenta, quinze
 
 ## Product Purpose
 
-Consolidar indicadores de usuários, acessos, empresas, telas, Loja, pedidos e franquias em uma experiência visual coerente. O primeiro sucesso é validar conteúdo, organização e aparência com dados fictícios antes de decidir cálculos funcionais e integrações reais.
+Consolidar indicadores de usuários, acessos, empresas, telas, Loja, pedidos e franquias em uma experiência visual coerente. O baseline visual já foi aprovado; a evolução funcional acontece em fatias verticais, começando pela Carga Manual de Dados de Usuários.
 
 ## Positioning
 
@@ -33,9 +33,9 @@ O Painel de Indicadores organiza em uma mesma narrativa os indicadores da Lyra M
 ## Capabilities and Constraints
 
 - Seis abas navegáveis: Visão geral; Usuários e Acessos; Empresas; Telas; Loja e Pedidos; Desenvolvimento.
-- Dados fixos, coerentes, realistas e integralmente fictícios cobrindo treze meses.
-- Filtros apenas visuais no MVP.
-- O MVP visual não carrega dados reais. A versão funcional usará Carga Manual de Dados por arquivos em pasta local, sem conexão direta com sistemas externos.
+- Os indicadores de Usuários aceitam agregados anonimizados da Pasta de Dados; as demais áreas permanecem com dados fictícios até suas respectivas fatias funcionais.
+- Filtros apenas visuais nesta etapa.
+- A Carga Manual de Dados não realiza conexão direta com sistemas externos e preserva a última versão válida por conjunto.
 - A área de Desenvolvimento permanece “em definição”, sem métricas inventadas.
 - A aprovação do MVP é visual; filtros e cálculos funcionais serão decididos depois.
 - O vocabulário canônico está em `GLOSSARY.md`.
@@ -50,7 +50,7 @@ O Painel de Indicadores organiza em uma mesma narrativa os indicadores da Lyra M
 
 ## Evidence on Hand
 
-Não há logotipo, identidade visual detalhada, capturas reais nem dados reais aprovados para uso no MVP. O MVP deve declarar permanentemente que todos os nomes e números são fictícios e não pode apresentar ilustrações como capturas reais do produto. Os arquivos reais serão avaliados separadamente antes da implementação da carga manual.
+Não há logotipo nem identidade visual detalhada aprovada além do baseline atual. Os indicadores de Usuários podem usar somente agregados anonimizados aderentes ao contrato; arquivos brutos e PII não entram no painel nem no Git. As demais áreas devem continuar identificadas como fictícias até receberem fontes validadas, e ilustrações nunca devem ser apresentadas como capturas reais do produto.
 
 ## Product Principles
 

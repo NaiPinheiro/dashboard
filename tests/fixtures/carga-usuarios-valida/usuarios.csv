@@ -1,0 +1,7 @@
+tipo_registro;mes;empresa_id_opaco;total_usuarios;ativos_por_status;inativos_por_status;inativados_por_inadimplencia;novos_usuarios;posicao
+snapshot_status_atual;2026-09;;410;330;70;10;;
+novos_usuarios_mes;2026-08;;;;;;30;
+novos_usuarios_mes;2026-09;;;;;;44;
+ranking_novos_usuarios_empresa;2026-09;EMP-001;;;;;12;1
+ranking_novos_usuarios_empresa;2026-09;EMP-002;;;;;9;2
+ranking_novos_usuarios_empresa;2026-09;EMP-003;;;;;7;3
