@@ -24,7 +24,13 @@ const PARTIAL_PRODUCTS = new Set(['Aplicativo', 'Loja Aplicativo']);
 
 function validateMysqlSource(source, fileName) {
   if (source.origin !== 'mysql') throw new DataContractError(`${fileName}: fonte_origem deve ser mysql.`);
-  if (source.state !== 'pronto') throw new DataContractError(`${fileName}: estado_fonte deve ser pronto.`);
+  if (!['pronto', 'parcial'].includes(source.state)) {
+    throw new DataContractError(`${fileName}: estado_fonte deve ser pronto ou parcial.`);
+  }
+}
+
+function coverageFor(product, source) {
+  return source.partial || source.state === 'parcial' || PARTIAL_PRODUCTS.has(product) ? 'partial' : 'ready';
 }
 
 function parseProduct(value, fileName, rowNumber) {
@@ -63,7 +69,7 @@ async function loadAccessRows(dataDir, source) {
       totalLogins,
       uniqueUsers,
       distinctCompanies,
-      coverage: PARTIAL_PRODUCTS.has(product) ? 'partial' : 'ready',
+      coverage: coverageFor(product, source),
     };
   });
   return combinations.sort(compareCombination);
@@ -96,7 +102,7 @@ async function loadRankingRows(dataDir, source) {
       companyId: row.empresa_id_opaco,
       totalLogins,
       uniqueUsers,
-      coverage: PARTIAL_PRODUCTS.has(product) ? 'partial' : 'ready',
+      coverage: coverageFor(product, source),
     };
   });
 
@@ -143,7 +149,8 @@ function isValidAccessData(data) {
       && isNonNegativeInteger(item.uniqueUsers)
       && item.uniqueUsers <= item.totalLogins
       && isNonNegativeInteger(item.distinctCompanies)
-      && item.coverage === (PARTIAL_PRODUCTS.has(item.product) ? 'partial' : 'ready');
+      && ['ready', 'partial'].includes(item.coverage)
+      && (!PARTIAL_PRODUCTS.has(item.product) || item.coverage === 'partial');
     keys.add(key);
     return valid;
   });
@@ -165,7 +172,8 @@ function isValidRankingData(data) {
       || !isNonNegativeInteger(item.totalLogins)
       || !isNonNegativeInteger(item.uniqueUsers)
       || item.uniqueUsers > item.totalLogins
-      || item.coverage !== (PARTIAL_PRODUCTS.has(item.product) ? 'partial' : 'ready')) return false;
+      || !['ready', 'partial'].includes(item.coverage)
+      || (PARTIAL_PRODUCTS.has(item.product) && item.coverage !== 'partial')) return false;
     keys.add(key);
     const groupKey = `${item.month}\u0000${item.product}`;
     const group = groups.get(groupKey) ?? [];
@@ -185,7 +193,7 @@ function isValidRankingData(data) {
   return true;
 }
 
-function composeAccessData(accessCache, rankingCache, warnings = [], rejections = []) {
+function composeAccessData(accessCache, rankingCache, warnings = [], rejections = [], fileWarnings = {}) {
   const hasAccess = Boolean(accessCache?.data);
   const hasRanking = Boolean(rankingCache?.data);
   let status = 'unavailable';
@@ -195,6 +203,10 @@ function composeAccessData(accessCache, rankingCache, warnings = [], rejections 
     status,
     source: accessCache?.source ?? null,
     rankingSource: rankingCache?.source ?? null,
+    fileStates: {
+      access: hasAccess ? (fileWarnings.access ? 'stale' : 'ready') : 'unavailable',
+      ranking: hasRanking ? (fileWarnings.ranking ? 'stale' : 'ready') : 'unavailable',
+    },
     warnings,
     rejections,
     indicators: { combinations: accessCache?.data ?? [] },
@@ -213,7 +225,13 @@ export async function loadAccessData(dataDir, cacheDir) {
       readCache(cacheDir, RANKING_CACHE, isValidRankingData),
     ]);
     const rejection = await recordRejection(cacheDir, 'manifesto_carga.csv', [error.message]);
-    return composeAccessData(accessCache, rankingCache, [error.message], [rejection]);
+    return composeAccessData(
+      accessCache,
+      rankingCache,
+      [error.message],
+      [rejection],
+      { access: error.message, ranking: error.message },
+    );
   }
 
   const [accessResult, rankingResult] = await Promise.all([
@@ -239,5 +257,6 @@ export async function loadAccessData(dataDir, cacheDir) {
     rankingResult.cache,
     [accessResult.warning, rankingResult.warning].filter(Boolean),
     [accessResult.rejection, rankingResult.rejection].filter(Boolean),
+    { access: accessResult.warning, ranking: rankingResult.warning },
   );
 }

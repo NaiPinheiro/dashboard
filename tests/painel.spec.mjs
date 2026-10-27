@@ -18,7 +18,7 @@ async function stageValidUserLoad() {
 test.beforeEach(stageValidUserLoad);
 
 const areas = [
-  ['Visão geral', 'Visão geral de setembro'],
+  ['Visão geral', 'Visão geral de setembro de 2026'],
   ['Usuários e Acessos', 'Usuários e Acessos'],
   ['Empresas', 'Empresas Clientes'],
   ['Telas', 'Telas mais acessadas'],
@@ -61,7 +61,7 @@ test('a gerente percorre as seis áreas do MVP do Painel', async ({ page }) => {
   await expect(overview).toBeFocused();
   await expect(overview).toHaveAttribute('aria-selected', 'true');
   await expect(
-    page.getByRole('heading', { name: 'Visão geral de setembro', exact: true }),
+    page.getByRole('heading', { name: 'Visão geral de setembro de 2026', exact: true }),
   ).toBeVisible();
 
   await overview.press('ArrowRight');
@@ -674,7 +674,7 @@ test.describe('Issue #6 · Acessos e ranking', () => {
     }));
   });
 
-  test('sem cache de acessos, arquivo inválido fica indisponível sem transformar ausência em zero', async ({ page }) => {
+  test('mantém o ranking consultável quando acessos.csv é inválido e não há cache', async ({ page }) => {
     await writeFile(
       resolve(testDataPath, 'acessos.csv'),
       'mes;produto_digital;total_logins;usuarios_unicos;empresas_clientes_distintas\n' +
@@ -690,22 +690,29 @@ test.describe('Issue #6 · Acessos e ranking', () => {
     expect(payload.ranking).not.toEqual([]);
     expect(payload.rejections).toContainEqual(expect.objectContaining({ file: 'acessos.csv' }));
 
+    const periodFilter = page.getByLabel('Período analisado');
+    const productFilter = page.getByLabel('Produto Digital');
+    await expect(periodFilter).toBeEnabled();
+    await expect(productFilter).toBeEnabled();
+    await expect(periodFilter).toHaveValue('2026-09');
+    await expect(productFilter).toHaveValue('Portal Web');
+
+    const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
     await page.getByRole('tablist', { name: 'Áreas do painel' })
       .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
       .click();
-    const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
     await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('Indisponível');
     await expect(usersPanel.locator('[data-access-value="unique-users"]')).toHaveText('Indisponível');
     await expect(usersPanel.locator('[data-access-value="distinct-companies"]')).toHaveText('Indisponível');
-    await expect(page.getByLabel('Período analisado')).toBeDisabled();
-    await expect(page.getByLabel('Produto Digital')).toBeDisabled();
 
     await page.getByRole('tablist', { name: 'Áreas do painel' })
       .getByRole('tab', { name: 'Empresas', exact: true })
       .click();
     const ranking = page.getByRole('tabpanel', { name: 'Empresas' }).locator('#access-ranking');
     await expect(ranking.getByText('Origem: MySQL · Estado: pronto', { exact: true })).toBeVisible();
-    await expect(ranking.locator('tbody').getByText('Ranking não informado para esta combinação.', { exact: true })).toBeVisible();
+    await expect(ranking.locator('tbody tr')).toHaveCount(3);
+    await expect(ranking.locator('tbody tr').first()).toContainText('EMP-ALFA');
+    await expect(ranking.locator('#access-ranking-coverage')).toHaveText('Ranking com dados prontos');
     await expect(ranking.getByText('0', { exact: true })).toHaveCount(0);
   });
 
@@ -738,4 +745,110 @@ test.describe('Issue #6 · Acessos e ranking', () => {
     await expect(page.getByLabel('Produto Digital').locator('option')).toHaveText(['Portal Web', 'Aplicativo']);
     await expect(usersPanel.getByText('Loja Web e Loja Aplicativo: não informado neste período.', { exact: true })).toBeVisible();
   });
+
+  test('ranking inválido sem cache aparece indisponível e nunca como pronto', async ({ page }) => {
+    await writeFile(
+      resolve(testDataPath, 'ranking_acessos.csv'),
+      'mes;produto_digital;posicao;empresa_id_opaco;total_logins;usuarios_unicos\n' +
+        '2026-09;Portal Web;1;EMP-ALFA;100;20\n' +
+        '2026-09;Portal Web;2;EMP-BETA;200;30\n',
+      'utf8',
+    );
+
+    await page.goto('/painel.html');
+    const response = await page.request.get('/api/acessos');
+    const payload = await response.json();
+    expect(payload.status).toBe('partial');
+    expect(payload.ranking).toEqual([]);
+    expect(payload.rankingSource).toBeNull();
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Empresas', exact: true })
+      .click();
+    const ranking = page.getByRole('tabpanel', { name: 'Empresas' }).locator('#access-ranking');
+    await expect(ranking.locator('#access-ranking-coverage')).toHaveText('Ranking indisponível');
+    await expect(ranking.locator('#access-ranking-source-state')).toHaveText('Sem arquivo válido');
+    await expect(ranking.locator('tbody')).toContainText('Ranking indisponível sem arquivo válido.');
+    await expect(ranking.getByText('Ranking com dados prontos', { exact: true })).toHaveCount(0);
+  });
+
+  test('ranking preservado após rejeição aparece desatualizado', async ({ page }) => {
+    await page.goto('/painel.html');
+    await writeFile(
+      resolve(testDataPath, 'ranking_acessos.csv'),
+      'mes;produto_digital;posicao;empresa_id_opaco;total_logins;usuarios_unicos\n' +
+        '2026-09;Portal Web;1;EMP-ALFA;100;20\n' +
+        '2026-09;Portal Web;2;EMP-BETA;200;30\n',
+      'utf8',
+    );
+    await page.reload();
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Empresas', exact: true })
+      .click();
+    const ranking = page.getByRole('tabpanel', { name: 'Empresas' }).locator('#access-ranking');
+    await expect(ranking.locator('#access-ranking-coverage')).toHaveText('Ranking desatualizado');
+    await expect(ranking.locator('#access-ranking-source-state')).toHaveText('Última carga válida preservada');
+    await expect(ranking.locator('tbody tr')).toHaveCount(3);
+  });
+
+  test('aceita estado parcial e exibe todos os metadados dos dois arquivos', async ({ page }) => {
+    const manifestPath = resolve(testDataPath, 'manifesto_carga.csv');
+    const { readFile } = await import('node:fs/promises');
+    const manifest = await readFile(manifestPath, 'utf8');
+    await writeFile(
+      manifestPath,
+      manifest
+        .replace(
+          '1.0;acessos.csv;2026-09-30T23:59:00-03:00;2026-08-01;2026-09-30;false;mysql;pronto;Agregados sintéticos por mês e Produto Digital',
+          '1.0;acessos.csv;2026-09-30T23:59:00-03:00;2026-08-01;2026-09-30;true;mysql;parcial;Setembro sintético ainda incompleto',
+        )
+        .replace(
+          '1.0;ranking_acessos.csv;2026-09-30T23:59:00-03:00;2026-08-01;2026-09-30;false;mysql;pronto;Ranking sintético com empresas anônimas',
+          '1.0;ranking_acessos.csv;2026-09-30T23:59:00-03:00;2026-08-01;2026-09-30;true;mysql;parcial;Ranking sintético ainda incompleto',
+        ),
+      'utf8',
+    );
+
+    await page.goto('/painel.html');
+    const response = await page.request.get('/api/acessos');
+    const payload = await response.json();
+    expect(payload.status).toBe('ready');
+    expect(payload.source).toMatchObject({ state: 'parcial', partial: true });
+    expect(payload.rankingSource).toMatchObject({ state: 'parcial', partial: true });
+    expect(payload.indicators.combinations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ month: '2026-09', product: 'Portal Web', coverage: 'partial' }),
+      expect.objectContaining({ month: '2026-09', product: 'Loja Web', coverage: 'partial' }),
+    ]));
+    expect(payload.ranking).toEqual(expect.arrayContaining([
+      expect.objectContaining({ month: '2026-09', product: 'Portal Web', coverage: 'partial' }),
+    ]));
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    const sourceSummary = page.getByRole('article', { name: 'Estado dos arquivos de Acessos' });
+    await expect(sourceSummary.getByText('Origem: MySQL · Estado: parcial', { exact: true })).toHaveCount(2);
+    await expect(sourceSummary.getByText('Abrangência: 01/08/2026 a 30/09/2026', { exact: true })).toHaveCount(2);
+    await expect(sourceSummary.getByText('Geração: 30/09/2026', { exact: false })).toHaveCount(2);
+    await expect(sourceSummary.getByText('Período parcial', { exact: true })).toHaveCount(2);
+    await expect(sourceSummary.getByText('Observação: Setembro sintético ainda incompleto', { exact: true })).toBeVisible();
+    await expect(sourceSummary.getByText('Observação: Ranking sintético ainda incompleto', { exact: true })).toBeVisible();
+    await expect(page.locator('#access-coverage')).toHaveText('Cobertura parcial');
+  });
+
+  test('mantém o cabeçalho da Visão geral coerente com o período filtrado e sem afirmação fictícia', async ({ page }) => {
+    await page.goto('/painel.html');
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.getByRole('heading', { name: 'Visão geral de setembro de 2026', exact: true })).toBeVisible();
+    await expect(overview.getByText('Leitura dos indicadores da Lyra M2M, comparada a agosto de 2026.', { exact: true })).toBeVisible();
+    await expect(overview.getByText('+8,4%', { exact: true })).toHaveCount(0);
+    await expect(overview.getByText('Mais usuários e mais logins no período', { exact: true })).toHaveCount(0);
+    await expect(overview.getByText('Comparação de Acessos', { exact: true })).toBeVisible();
+
+    await page.getByLabel('Período analisado').selectOption('2026-08');
+    await expect(overview.getByRole('heading', { name: 'Visão geral de agosto de 2026', exact: true })).toBeVisible();
+    await expect(overview.getByText('Leitura dos indicadores da Lyra M2M, comparada a julho de 2026.', { exact: true })).toBeVisible();
+    await expect(overview.getByText('Sem período anterior comparável', { exact: true })).toBeVisible();
+  });
+
 });

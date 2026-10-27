@@ -66,7 +66,7 @@
 
   <main>
     <section id="overview" class="panel active" role="tabpanel" aria-labelledby="tab-overview">
-      <div class="page-heading"><div><h1>Visão geral de setembro</h1><p>Leitura dos indicadores da Lyra M2M, comparada a agosto de 2026.</p></div><div class="period-chip"><span class="status-dot"></span>Último mês fechado</div></div>
+      <div class="page-heading"><div><h1 id="overview-heading">Visão geral</h1><p id="overview-period-context">Período de Acessos em validação.</p></div><div class="period-chip"><span class="status-dot"></span>Período de Análise</div></div>
       <div class="hero-grid numbers">
         <article class="feature-metric"><div class="metric-label"><span>Total de usuários</span><svg class="svg-icon" aria-hidden="true"><use href="#i-users"/></svg></div><div class="metric-main"><span class="metric-value unavailable-value" data-user-value="current-total">Indisponível</span><span class="delta neutral" data-user-value="total-state">Sem carga válida</span></div><div class="metric-caption" data-user-value="total-caption">Aguardando a Pasta de Dados</div><div class="pulse" data-user-value="total-pulse" hidden></div></article>
         <article class="feature-metric access"><div class="metric-label"><span>Logins realizados</span><svg class="svg-icon" aria-hidden="true"><use href="#i-access"/></svg></div><div class="metric-main"><span class="metric-value unavailable-value" data-access-value="overview-logins">Indisponível</span><span class="delta neutral" id="access-overview-coverage">Sem carga válida</span></div><div class="metric-caption" data-access-value="overview-caption">Aguardando acessos.csv</div></article>
@@ -81,7 +81,7 @@
       </div>
       <div class="content-grid">
         <article class="card"><div class="card-header"><div><h2>Leitura de Acessos</h2><div class="card-sub">A combinação selecionada usa somente logins concluídos informados em acessos.csv</div></div><span class="source-tag" id="overview-access-source">Fonte em validação</span></div><div class="not-available"><div><svg class="svg-icon" aria-hidden="true"><use href="#i-access"/></svg><strong>Tendência histórica não informada</strong><p>O contrato 1.0 sustenta os totais mensais por Produto Digital, sem preencher meses ou combinações ausentes.</p></div></div></article>
-        <aside class="card"><div class="card-header"><div><h2>Pontos para comentar</h2><div class="card-sub">Leitura rápida para conduzir a reunião</div></div></div><div class="attention-list"><div class="attention"><div class="attention-icon good"><svg class="svg-icon" aria-hidden="true"><use href="#i-check"/></svg></div><div><strong>Adoção em alta</strong><small>Mais usuários e mais logins no período</small></div><span class="attention-value">+8,4%</span></div><div class="attention"><div class="attention-icon warn"><svg class="svg-icon" aria-hidden="true"><use href="#i-alert"/></svg></div><div><strong>Suspensões recentes</strong><small>A fonte atual não informa a data da suspensão</small></div><span class="attention-value">Indisponível</span></div><div class="attention"><div class="attention-icon bad"><svg class="svg-icon" aria-hidden="true"><use href="#i-pause"/></svg></div><div><strong>Inatividade cresceu</strong><small>Usuários sem acesso e status inativo</small></div><span class="attention-value">+7</span></div></div></aside>
+        <aside class="card"><div class="card-header"><div><h2>Pontos para comentar</h2><div class="card-sub">Leitura rápida para conduzir a reunião</div></div></div><div class="attention-list"><div class="attention"><div class="attention-icon good"><svg class="svg-icon" aria-hidden="true"><use href="#i-check"/></svg></div><div><strong>Comparação de Acessos</strong><small id="access-comparison-detail">Aguardando períodos comparáveis válidos</small></div><span class="attention-value" id="access-comparison-value">Indisponível</span></div><div class="attention"><div class="attention-icon warn"><svg class="svg-icon" aria-hidden="true"><use href="#i-alert"/></svg></div><div><strong>Suspensões recentes</strong><small>A fonte atual não informa a data da suspensão</small></div><span class="attention-value">Indisponível</span></div><div class="attention"><div class="attention-icon bad"><svg class="svg-icon" aria-hidden="true"><use href="#i-pause"/></svg></div><div><strong>Inatividade cresceu</strong><small>Usuários sem acesso e status inativo</small></div><span class="attention-value">+7</span></div></div></aside>
       </div>
     </section>
 
@@ -93,7 +93,7 @@
         <article class="card compact-kpi span-3"><div class="stat-top"><span>Novos usuários</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big unavailable-value" data-user-value="new-users">Indisponível</div><div class="compare"><span data-user-value="new-users-previous">Período anterior indisponível</span><span class="trend-good" data-user-value="new-users-delta">Sem comparação</span></div></article>
         <article class="card compact-kpi span-3"><div class="stat-top"><span>Baixas</span><svg class="svg-icon"><use href="#i-users"/></svg></div><div class="big unavailable-value">Indisponível</div><div class="compare"><span>Arquivos não trazem data de baixa</span><span class="trend-warn">Pendente</span></div></article>
         <article class="card compact-kpi span-3"><div class="stat-top"><span>Inativos · 30 dias</span><svg class="svg-icon"><use href="#i-pause"/></svg></div><div class="big unavailable-value" data-user-value="inactive-30">Indisponível</div><div class="compare"><span>Data de referência</span><span data-user-value="inactivity-reference">Referência pendente</span></div></article>
-        <article class="card source-summary span-12" aria-label="Estado dos arquivos de Acessos"><div class="source-summary-main"><span class="status-dot"></span><div><strong id="access-source-state">Validando acessos.csv e ranking_acessos.csv</strong><small id="access-source-message">Os indicadores aparecem somente para combinações válidas de mês e Produto Digital.</small></div></div><div class="source-summary-files"><div class="source-file-row"><strong>Acessos</strong><span id="access-source-origin">Origem: indisponível</span><span id="access-source-period">Abrangência: indisponível</span><span id="access-load-state">Sem arquivo válido</span></div><div class="source-file-row"><strong>Ranking de Empresas Clientes</strong><span id="ranking-source-origin">Origem: indisponível</span><span id="ranking-source-period">Abrangência: indisponível</span><span id="ranking-load-state">Sem arquivo válido</span></div></div><div class="attention-list" id="access-notices" aria-live="polite"></div></article>
+        <article class="card source-summary span-12" aria-label="Estado dos arquivos de Acessos"><div class="source-summary-main"><span class="status-dot"></span><div><strong id="access-source-state">Validando acessos.csv e ranking_acessos.csv</strong><small id="access-source-message">Os indicadores aparecem somente para combinações válidas de mês e Produto Digital.</small></div></div><div class="source-summary-files"><div class="source-file-row"><strong>Acessos</strong><span id="access-source-origin">Origem: indisponível</span><span id="access-source-period">Abrangência: indisponível</span><span id="access-load-state">Sem arquivo válido</span></div><div class="source-file-row"><strong>Atualização de Acessos</strong><span id="access-source-generated">Geração: indisponível</span><span id="access-source-partial">Parcialidade: indisponível</span><span id="access-source-observation">Observação: indisponível</span></div><div class="source-file-row"><strong>Ranking de Empresas Clientes</strong><span id="ranking-source-origin">Origem: indisponível</span><span id="ranking-source-period">Abrangência: indisponível</span><span id="ranking-load-state">Sem arquivo válido</span></div><div class="source-file-row"><strong>Atualização do ranking</strong><span id="ranking-source-generated">Geração: indisponível</span><span id="ranking-source-partial">Parcialidade: indisponível</span><span id="ranking-source-observation">Observação: indisponível</span></div></div><div class="attention-list" id="access-notices" aria-live="polite"></div></article>
         <article class="card compact-kpi span-4"><div class="stat-top"><span>Logins</span><svg class="svg-icon" aria-hidden="true"><use href="#i-access"/></svg></div><div class="big unavailable-value" data-access-value="total-logins">Indisponível</div><div class="compare"><span id="access-selection-label">Período e produto indisponíveis</span><span id="access-coverage">Sem carga válida</span></div></article>
         <article class="card compact-kpi span-4"><div class="stat-top"><span>Usuários únicos</span><svg class="svg-icon" aria-hidden="true"><use href="#i-users"/></svg></div><div class="big unavailable-value" data-access-value="unique-users">Indisponível</div><div class="compare"><span>Logins concluídos com sucesso</span><span id="access-unique-state">Não informado</span></div></article>
         <article class="card compact-kpi span-4"><div class="stat-top"><span>Empresas Clientes distintas</span><svg class="svg-icon" aria-hidden="true"><use href="#i-company"/></svg></div><div class="big unavailable-value" data-access-value="distinct-companies">Indisponível</div><div class="compare"><span>Na combinação selecionada</span><span id="access-company-state">Não informado</span></div></article>
@@ -293,13 +293,22 @@
     function setAccessSource(prefix,source){
       const origin=document.getElementById(`${prefix}-source-origin`);
       const period=document.getElementById(`${prefix}-source-period`);
+      const generated=document.getElementById(`${prefix}-source-generated`);
+      const partial=document.getElementById(`${prefix}-source-partial`);
+      const observation=document.getElementById(`${prefix}-source-observation`);
       if(!source){
         origin.textContent='Origem: indisponível';
         period.textContent='Abrangência: indisponível';
+        generated.textContent='Geração: indisponível';
+        partial.textContent='Parcialidade: indisponível';
+        observation.textContent='Observação: indisponível';
         return;
       }
       origin.textContent=`Origem: ${sourceNames[source.origin]??source.origin} · Estado: ${source.state}`;
       period.textContent=`Abrangência: ${formatDate(source.periodStart)} a ${formatDate(source.periodEnd)}`;
+      generated.textContent=`Geração: ${new Date(source.generatedAt).toLocaleString('pt-BR')}`;
+      partial.textContent=source.partial?'Período parcial':'Período completo';
+      observation.textContent=source.observation?`Observação: ${source.observation}`:'Sem observação no manifesto';
     }
     function setRankingCardSource(source,state){
       const origin=document.getElementById('access-ranking-source-origin');
@@ -314,7 +323,7 @@
       document.getElementById('access-ranking-source-state').textContent=state;
     }
     function isMissingSourceWarning(warning){return warning?.includes('arquivo ausente')||warning?.includes('fonte não atualizada')}
-    function accessWarningFor(fileName){return accessPayload?.warnings.find(warning=>warning.includes(fileName))??null}
+    function accessWarningFor(fileName){return accessPayload?.warnings.find(warning=>warning.startsWith(`${fileName}:`))??null}
     function appendAccessNotice(title,detail){
       const notice=document.createElement('div');
       notice.className='attention';
@@ -333,11 +342,18 @@
       notice.append(icon,copy,value);
       document.getElementById('access-notices').append(notice);
     }
+    function availableSelections(){
+      const selections=new Map();
+      [...accessPayload.indicators.combinations,...accessPayload.ranking].forEach(item=>{
+        selections.set(`${item.month}\u0000${item.product}`,{month:item.month,product:item.product});
+      });
+      return [...selections.values()];
+    }
     function availableMonths(){
-      return [...new Set(accessPayload.indicators.combinations.map(item=>item.month))].sort((left,right)=>right.localeCompare(left));
+      return [...new Set(availableSelections().map(item=>item.month))].sort((left,right)=>right.localeCompare(left));
     }
     function combinationsForMonth(month){
-      return accessPayload.indicators.combinations
+      return availableSelections()
         .filter(item=>item.month===month)
         .sort((left,right)=>accessProducts.indexOf(left.product)-accessProducts.indexOf(right.product));
     }
@@ -365,18 +381,54 @@
       periodSelect.value=months[0]??'';
       syncProductOptions();
     }
-    function renderAccessRanking(month,product,coverage){
+    function previousMonth(month){
+      const [year,monthNumber]=month.split('-').map(Number);
+      return new Date(Date.UTC(year,monthNumber-2,1)).toISOString().slice(0,7);
+    }
+    function updateOverviewPeriod(month){
+      if(!month){
+        document.getElementById('overview-heading').textContent='Visão geral';
+        document.getElementById('overview-period-context').textContent='Período de Acessos indisponível.';
+        return;
+      }
+      document.getElementById('overview-heading').textContent=`Visão geral de ${formatMonth(month).toLocaleLowerCase('pt-BR')}`;
+      document.getElementById('overview-period-context').textContent=`Leitura dos indicadores da Lyra M2M, comparada a ${formatMonth(previousMonth(month)).toLocaleLowerCase('pt-BR')}.`;
+    }
+    function renderAccessComparison(selected){
+      const detail=document.getElementById('access-comparison-detail');
+      const value=document.getElementById('access-comparison-value');
+      const previous=selected&&selected.coverage==='ready'
+        ?accessPayload.indicators.combinations.find(item=>item.month===previousMonth(selected.month)&&item.product===selected.product&&item.coverage==='ready')
+        :null;
+      if(!selected||selected.coverage!=='ready'||!previous){
+        detail.textContent='Sem período anterior comparável';
+        value.textContent='Indisponível';
+        return;
+      }
+      const difference=selected.totalLogins-previous.totalLogins;
+      const percentage=previous.totalLogins===0?null:(difference/previous.totalLogins)*100;
+      detail.textContent=`${selected.product} · ${formatMonth(previous.month)} para ${formatMonth(selected.month)}`;
+      value.textContent=percentage===null?'Base anterior zero':`${percentage>0?'+':''}${percentage.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}%`;
+    }
+    function renderAccessRanking(month,product){
       const body=document.getElementById('access-ranking-body');
       body.replaceChildren();
-      const items=accessPayload.ranking.filter(item=>item.month===month&&item.product===product)
-        .sort((left,right)=>left.position-right.position);
-      document.getElementById('access-ranking-period').textContent=`Ranking de ${formatMonth(month).toLocaleLowerCase('pt-BR')} · ${product}`;
-      document.getElementById('access-ranking-coverage').textContent=coverage==='partial'?'Ranking com cobertura parcial':'Ranking com dados prontos';
-      if(items.length===0){
+      const fileState=accessPayload?.fileStates?.ranking??(accessPayload?.rankingSource?'ready':'unavailable');
+      const items=accessPayload?.ranking.filter(item=>item.month===month&&item.product===product)
+        .sort((left,right)=>left.position-right.position)??[];
+      document.getElementById('access-ranking-period').textContent=month&&product
+        ?`Ranking de ${formatMonth(month).toLocaleLowerCase('pt-BR')} · ${product}`
+        :'Período e Produto Digital indisponíveis para o ranking.';
+      const badge=document.getElementById('access-ranking-coverage');
+      if(fileState==='unavailable') badge.textContent='Ranking indisponível';
+      else if(fileState==='stale') badge.textContent='Ranking desatualizado';
+      else if(items.length===0) badge.textContent='Ranking não informado';
+      else badge.textContent=items.some(item=>item.coverage==='partial')?'Ranking com cobertura parcial':'Ranking com dados prontos';
+      if(fileState==='unavailable'||items.length===0){
         const row=document.createElement('tr');
         const cell=document.createElement('td');
         cell.colSpan=4;
-        cell.textContent='Ranking não informado para esta combinação.';
+        cell.textContent=fileState==='unavailable'?'Ranking indisponível sem arquivo válido.':'Ranking não informado para esta combinação.';
         row.append(cell);
         body.append(row);
         return;
@@ -406,60 +458,81 @@
         ['total-logins','unique-users','distinct-companies','overview-logins'].forEach(name=>setAccessValue(name,null));
         document.querySelectorAll('[data-access-value="overview-caption"]').forEach(element=>{element.textContent='Aguardando acessos.csv'});
         document.getElementById('access-overview-coverage').textContent='Sem carga válida';
+        document.getElementById('overview-access-source').textContent='Fonte indisponível';
+        updateOverviewPeriod(null);
+        renderAccessComparison(null);
+        renderAccessRanking(null,null);
         return;
       }
       const month=periodSelect.value;
       const product=productSelect.value;
-      const selected=accessPayload.indicators.combinations.find(item=>item.month===month&&item.product===product);
-      if(!selected){
-        ['total-logins','unique-users','distinct-companies','overview-logins'].forEach(name=>setAccessValue(name,null));
-        return;
-      }
-      setAccessValue('total-logins',selected.totalLogins);
-      setAccessValue('unique-users',selected.uniqueUsers);
-      setAccessValue('distinct-companies',selected.distinctCompanies);
-      setAccessValue('overview-logins',selected.totalLogins);
-      document.querySelectorAll('[data-access-value="overview-caption"]').forEach(element=>{
-        element.textContent=`${numberFormatter.format(selected.uniqueUsers)} usuários únicos · ${product} · ${formatMonth(month)}`;
-      });
-      const coverageLabel=selected.coverage==='partial'?'Cobertura parcial':'Dados prontos';
-      document.getElementById('access-coverage').textContent=coverageLabel;
-      document.getElementById('access-overview-coverage').textContent=coverageLabel;
-      document.getElementById('overview-access-source').textContent=`${product} · ${formatMonth(month)}`;
+      const selected=accessPayload.indicators.combinations.find(item=>item.month===month&&item.product===product)??null;
+      updateOverviewPeriod(month);
       document.getElementById('access-selection-label').textContent=`${formatMonth(month)} · ${product}`;
-      document.getElementById('access-unique-state').textContent=selected.totalLogins===0?'Zero informado':'Valor informado';
-      document.getElementById('access-company-state').textContent=selected.totalLogins===0?'Zero informado':'Valor informado';
-      const missing=accessProducts.filter(candidate=>!combinationsForMonth(month).some(item=>item.product===candidate));
+      if(selected){
+        setAccessValue('total-logins',selected.totalLogins);
+        setAccessValue('unique-users',selected.uniqueUsers);
+        setAccessValue('distinct-companies',selected.distinctCompanies);
+        setAccessValue('overview-logins',selected.totalLogins);
+        document.querySelectorAll('[data-access-value="overview-caption"]').forEach(element=>{
+          element.textContent=`${numberFormatter.format(selected.uniqueUsers)} usuários únicos · ${product} · ${formatMonth(month)}`;
+        });
+        const coverageLabel=selected.coverage==='partial'?'Cobertura parcial':'Dados prontos';
+        document.getElementById('access-coverage').textContent=coverageLabel;
+        document.getElementById('access-overview-coverage').textContent=coverageLabel;
+        document.getElementById('overview-access-source').textContent=`${product} · ${formatMonth(month)}`;
+        document.getElementById('access-unique-state').textContent=selected.totalLogins===0?'Zero informado':'Valor informado';
+        document.getElementById('access-company-state').textContent=selected.totalLogins===0?'Zero informado':'Valor informado';
+      }else{
+        ['total-logins','unique-users','distinct-companies','overview-logins'].forEach(name=>setAccessValue(name,null));
+        document.querySelectorAll('[data-access-value="overview-caption"]').forEach(element=>{element.textContent=`acessos.csv não informa ${product} em ${formatMonth(month)}`});
+        document.getElementById('access-coverage').textContent='Acessos não informados';
+        document.getElementById('access-overview-coverage').textContent='Indisponível';
+        document.getElementById('overview-access-source').textContent='Acessos indisponíveis';
+        document.getElementById('access-unique-state').textContent='Não informado';
+        document.getElementById('access-company-state').textContent='Não informado';
+      }
+      const accessCombinations=accessPayload.indicators.combinations.filter(item=>item.month===month);
+      const missing=accessProducts.filter(candidate=>!accessCombinations.some(item=>item.product===candidate));
       const notices=document.getElementById('access-notices');
       notices.replaceChildren();
       if(missing.length>0){
         const names=missing.length===1?missing[0]:`${missing.slice(0,-1).join(', ')} e ${missing.at(-1)}`;
-        appendAccessNotice(`${names}: não informado neste período.`,'Somente Produtos Digitais com uma linha válida aparecem no filtro.');
+        appendAccessNotice(`${names}: não informado neste período.`,'Ausência de linha em acessos.csv não representa zero.');
       }
-      if(selected.coverage==='partial'){
-        appendAccessNotice('Cobertura parcial','A instrumentação deste Produto Digital ainda precisa de validação adicional.');
+      if(selected?.coverage==='partial'){
+        appendAccessNotice('Cobertura parcial','O manifesto ou a instrumentação deste Produto Digital indica período parcial.');
       }
-      renderAccessRanking(month,product,selected.coverage);
+      renderAccessComparison(selected);
+      renderAccessRanking(month,product);
     }
     function renderLoadedAccesses(payload){
       accessPayload=payload;
       const accessWarning=accessWarningFor('acessos.csv');
       const rankingWarning=accessWarningFor('ranking_acessos.csv');
-      const hasAccess=payload.indicators.combinations.length>0;
-      dataLoadState.access=payload.status==='ready'?'Acessos carregados':hasAccess?'Últimos dados válidos de Acessos preservados':'Acessos indisponíveis';
+      const accessState=payload.fileStates?.access??(payload.source?'ready':'unavailable');
+      const rankingState=payload.fileStates?.ranking??(payload.rankingSource?'ready':'unavailable');
+      const hasAccess=accessState!=='unavailable';
+      const hasRanking=rankingState!=='unavailable';
+      dataLoadState.access=hasAccess||hasRanking
+        ?(accessState==='stale'||rankingState==='stale'?'Últimos conjuntos válidos de Acessos preservados':'Acessos carregados')
+        :'Acessos indisponíveis';
       updateDataMode();
-      document.getElementById('access-source-state').textContent=accessWarning?'Última carga válida de acessos preservada':'Arquivos de Acessos validados';
-      document.getElementById('access-source-message').textContent=payload.warnings.length>0?'Uma fonte não foi atualizada; cada último conjunto válido continua ativo de forma independente.':'Filtros limitados às combinações válidas informadas nos arquivos.';
-      document.getElementById('access-load-state').textContent=accessWarning?(isMissingSourceWarning(accessWarning)?'Fonte de acessos não atualizada':'Última carga válida preservada'):'Fonte validada';
-      document.getElementById('ranking-load-state').textContent=rankingWarning?(isMissingSourceWarning(rankingWarning)?'Fonte do ranking não atualizada':'Última carga válida preservada'):'Fonte validada';
+      document.getElementById('access-source-state').textContent=accessState==='stale'
+        ?'Última carga válida de acessos preservada'
+        :hasAccess&&hasRanking?'Arquivos de Acessos validados':'Somente um arquivo de Acessos está disponível';
+      document.getElementById('access-source-message').textContent=payload.warnings.length>0
+        ?'Cada arquivo mantém seu próprio estado; conjuntos válidos continuam consultáveis.'
+        :'Filtros limitados às combinações válidas informadas em pelo menos um dos arquivos.';
+      const accessStateLabel=accessState==='unavailable'?'Sem arquivo válido':accessState==='stale'
+        ?(isMissingSourceWarning(accessWarning)?'Fonte de acessos não atualizada':'Última carga válida preservada'):'Fonte validada';
+      const rankingStateLabel=rankingState==='unavailable'?'Sem arquivo válido':rankingState==='stale'
+        ?(isMissingSourceWarning(rankingWarning)?'Fonte do ranking não atualizada':'Última carga válida preservada'):'Fonte validada';
+      document.getElementById('access-load-state').textContent=accessStateLabel;
+      document.getElementById('ranking-load-state').textContent=rankingStateLabel;
       setAccessSource('access',payload.source);
       setAccessSource('ranking',payload.rankingSource);
-      const rankingState=rankingWarning?(isMissingSourceWarning(rankingWarning)?'Fonte do ranking não atualizada':'Última carga válida preservada'):'Fonte validada';
-      setRankingCardSource(payload.rankingSource,rankingState);
-      if(!hasAccess){
-        renderUnavailableAccesses(payload.warnings[0]??'acessos.csv não possui carga válida.',payload);
-        return;
-      }
+      setRankingCardSource(payload.rankingSource,rankingStateLabel);
       configureAccessFilters();
       renderAccessSelection();
     }
@@ -486,7 +559,7 @@
         const response=await fetch('/api/acessos',{cache:'no-store'});
         const payload=await response.json();
         if(!response.ok||payload.status==='unavailable'){
-          renderUnavailableAccesses(payload.errors?.[0]??payload.warnings?.[0]??'A carga não pôde ser validada.');
+          renderUnavailableAccesses(payload.errors?.[0]??payload.warnings?.[0]??'A carga não pôde ser validada.',payload);
           return;
         }
         renderLoadedAccesses(payload);
