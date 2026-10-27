@@ -1,0 +1,3 @@
+versao_contrato;arquivo;gerado_em;periodo_inicio;periodo_fim;periodo_parcial;fonte_origem;estado_fonte;observacao
+1.0;usuarios.csv;2026-09-30T23:59:00-03:00;2026-08-01;2026-09-30;false;mysql;pronto;Carga fictícia de teste
+1.0;usuarios_inatividade.csv;2026-09-30T23:59:00-03:00;2026-09-01;2026-09-30;false;mysql;pronto;Fotografia fictícia de teste

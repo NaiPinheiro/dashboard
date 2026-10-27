@@ -17,5 +17,10 @@ export default defineConfig({
     url: 'http://127.0.0.1:8792/painel.html',
     reuseExistingServer: false,
     timeout: 15_000,
+    env: {
+      ...process.env,
+      DATA_DIR: 'tests/.data',
+      CACHE_DIR: 'tests/.cache',
+    },
   },
 });
