@@ -1,0 +1,11 @@
+node_modules/
+playwright-report/
+test-results/
+.kiro/settings/
+
+# Documentos internos de fontes e contratos não são publicados no repositório público.
+docs/data/
+docs/handoffs/
+
+*.log
+.DS_Store
