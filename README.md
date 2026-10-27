@@ -1,6 +1,6 @@
 # Painel de Indicadores — Lyra M2M
 
-Baseline navegável do Painel de Indicadores, agora com a primeira fatia funcional de Carga Manual de Dados. Os indicadores de Usuários podem usar agregados anonimizados validados; as demais áreas continuam com dados fictícios e os filtros permanecem ilustrativos.
+Painel funcional e navegável com Carga Manual de Dados por arquivos agregados, sintéticos ou anonimizados. A validação acontece por arquivo, preserva o último cache válido e mantém lacunas sem fonte como indisponíveis, nunca como zero.
 
 ## Requisitos
 
@@ -22,34 +22,71 @@ npm.cmd start
 
 Abra [http://127.0.0.1:8792/painel.html](http://127.0.0.1:8792/painel.html). O servidor aceita conexões somente no computador local.
 
-## Carregar dados de Usuários
+## Carregar a Pasta de Dados
 
-Por padrão, o servidor procura uma pasta local chamada `dados`. Ela não é versionada. Também é possível indicar outra pasta antes de iniciar:
+Por padrão, o servidor procura uma pasta local chamada `dados`. Ela não é versionada nem servida por HTTP. Também é possível indicar outra pasta antes de iniciar:
 
 ```powershell
 $env:DATA_DIR = 'C:\caminho\para\Pasta de Dados'
 npm.cmd start
 ```
 
-A pasta deve conter estes arquivos UTF-8, delimitados por ponto e vírgula:
+A pasta aceita estes arquivos UTF-8 delimitados por ponto e vírgula:
 
 - `manifesto_carga.csv`;
 - `usuarios.csv`;
-- `usuarios_inatividade.csv`.
+- `usuarios_inatividade.csv`;
+- `acessos.csv`;
+- `ranking_acessos.csv`;
+- `empresas.csv`;
+- `telas_aplicativo.csv`;
+- `telas_portal.csv`, opcional e parcial.
 
-Os exemplos fictícios usados pelos testes estão em `tests/fixtures/carga-usuarios-valida`. Eles mostram os cabeçalhos e os tipos de registro aceitos sem expor dados corporativos.
+O manifesto declara contrato, geração, abrangência, parcialidade, origem, estado e observação de cada fonte. Os exemplos de teste em `tests/fixtures/carga-usuarios-valida` são integralmente sintéticos e anônimos. Nunca adicione arquivos reais da Pasta de Dados ao Git.
 
-A carga é validada integralmente antes da ativação. Cabeçalhos incompatíveis, colunas extras, chaves duplicadas, datas inválidas, totais negativos e identificadores que se pareçam com PII são rejeitados. O cache local em `.painel-cache` guarda somente os agregados validados e preserva a última versão válida quando uma nova tentativa falha.
+### Validação e cache
 
-Nunca adicione arquivos reais da Pasta de Dados ao Git.
+A carga valida cada arquivo integralmente e ativa somente os conjuntos válidos. Cabeçalho incompatível, coluna extra, chave duplicada, data inválida, total negativo, inconsistência entre totais e PII conhecida causam rejeição apenas daquele arquivo.
+
+O cache local em `.painel-cache` guarda somente agregados validados:
+
+- `ready`: todos os arquivos necessários do conjunto foram validados nesta carga;
+- `stale`: a tentativa atual falhou ou o arquivo não foi atualizado, mas a última versão válida continua ativa;
+- `partial`: somente parte de um conjunto composto possui versão válida;
+- `unavailable`: não existe versão válida para o conjunto.
+
+Arquivo ausente ou ausente do manifesto gera aviso de fonte não atualizada. Uma rejeição registra somente nome do arquivo, data da tentativa e motivos de validação; o conteúdo das linhas não é copiado. Campo vazio, `\N`, zero explícito e indisponibilidade permanecem estados distintos.
+
+Loja, Pedidos, Franquias, Baixas de Usuário e suspensões recentes continuam sem números até receberem contratos e fontes adequados. Sessões e eventos do Microsoft Clarity não são convertidos em Visualizações de Tela, e o evento `login` do Google Analytics não substitui Acesso.
+
+### Fronteira HTTP
+
+O servidor escuta exclusivamente em `127.0.0.1`. Somente `painel.html`, ativos públicos permitidos e os endpoints agregados do painel ficam acessíveis. Pasta de Dados, `.painel-cache`, documentação e testes retornam `404` e não devem ser publicados.
 
 ## Testes
+
+A validação usa o Painel e seus endpoints agregados pelo navegador, sem depender da estrutura interna do CSS. Para executar somente a validação integrada da Issue #9:
+
+```powershell
+npm.cmd test -- --grep "Issue #9"
+```
+
+Esses testes copiam fixtures sintéticos para `tests/.data`, usam `tests/.cache` isolado e verificam:
+
+- carga dos sete arquivos canônicos e do manifesto;
+- ativação independente quando outro arquivo está ausente ou inválido;
+- preservação de caches válidos;
+- estados `ready`, `stale`, `partial` e `unavailable`;
+- rejeições com arquivo, data e motivos, sem conteúdo de linha;
+- metadados visíveis por fonte e lacunas sem números inventados.
+
+Para a suíte completa, fora desta fase direcionada:
 
 ```powershell
 npm.cmd test
 ```
 
-O seam de teste é o Painel carregado no navegador. O teste observa abertura, aviso permanente de dados fictícios, seis áreas navegáveis e comportamento por teclado usando papéis e nomes acessíveis. Ele não depende da estrutura interna do CSS e não substitui a inspeção visual em 16:9 e 1366 × 768.
+A inspeção visual em 16:9 e 1366 × 768 complementa os testes automatizados.
 
 ## Documentação do produto
 

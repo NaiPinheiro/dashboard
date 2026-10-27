@@ -1191,3 +1191,204 @@ test.describe('Issue #8 · fonte de inatividade na Visão geral', () => {
     await expect(overview.locator('[data-overview-value="application-views"]')).toHaveText('7.142');
   });
 });
+
+
+test.describe('Issue #9 · validação funcional integrada', () => {
+  async function readIntegratedPayloads(page) {
+    const [users, access, companies, portal, application] = await Promise.all([
+      page.request.get('/api/usuarios').then((response) => response.json()),
+      page.request.get('/api/acessos').then((response) => response.json()),
+      page.request.get('/api/empresas').then((response) => response.json()),
+      page.request.get('/api/telas-portal').then((response) => response.json()),
+      page.request.get('/api/telas-aplicativo').then((response) => response.json()),
+    ]);
+    return { users, access, companies, portal, application };
+  }
+
+  test('o manifesto e os sete arquivos canônicos alimentam os conjuntos corretos com metadados visíveis', async ({ page }) => {
+    await page.goto('/painel.html');
+    const payloads = await readIntegratedPayloads(page);
+
+    expect(payloads.users.status).toBe('ready');
+    expect(payloads.access.status).toBe('ready');
+    expect(payloads.companies.status).toBe('ready');
+    expect(payloads.portal.status).toBe('ready');
+    expect(payloads.application.status).toBe('ready');
+    expect(payloads.access.fileStates).toEqual({ access: 'ready', ranking: 'ready' });
+
+    const sources = [
+      payloads.users.source,
+      payloads.users.inactivitySource,
+      payloads.access.source,
+      payloads.access.rankingSource,
+      payloads.companies.source,
+      payloads.portal.source,
+      payloads.application.source,
+    ];
+    expect(sources).toHaveLength(7);
+    for (const source of sources) {
+      expect(source).toMatchObject({ contractVersion: '1.0' });
+      expect(source.generatedAt).toMatch(/^2026-09-30T/);
+      expect(source.periodStart).toMatch(/^2026-/);
+      expect(source.periodEnd).toMatch(/^2026-/);
+      expect(source.origin).toMatch(/^(mysql|google_analytics|microsoft_clarity)$/);
+      expect(source.state).toMatch(/^(pronto|parcial)$/);
+    }
+
+    const overviewSources = page.getByRole('tabpanel', { name: 'Visão geral' })
+      .getByRole('article', { name: 'Fontes da Visão geral' });
+    for (const sourceName of ['users', 'inactivity', 'access', 'companies', 'portal', 'application']) {
+      const row = overviewSources.locator(`[data-overview-source="${sourceName}"]`);
+      await expect(row.locator('[data-source-origin]')).not.toHaveText('Origem indisponível');
+      await expect(row.locator('[data-source-period]')).not.toHaveText('Referência indisponível');
+    }
+
+    for (const label of ['Loja', 'Pedidos criados', 'Franquias', 'Baixas de usuários', 'Suspensões recentes']) {
+      const gap = page.locator('[data-overview-gap]').filter({ has: page.getByText(label, { exact: true }) });
+      await expect(gap.getByText('Indisponível', { exact: true })).toBeVisible();
+      await expect(gap.getByText('0', { exact: true })).toHaveCount(0);
+    }
+    await expect(page.getByText('Visualizações por tela do Portal: Não validado', { exact: true })).toBeVisible();
+    await expect(page.getByText('O evento login do Google Analytics não substitui Acesso.', { exact: true })).toBeVisible();
+  });
+
+  test('uma linha ausente no manifesto não impede a ativação dos demais arquivos válidos', async ({ page }) => {
+    await page.goto('/painel.html');
+    await expect(page.locator('[data-user-value="current-total"]').first()).toHaveText('410');
+
+    const manifestPath = resolve(testDataPath, 'manifesto_carga.csv');
+    const manifest = await readFile(manifestPath, 'utf8');
+    await writeFile(
+      manifestPath,
+      manifest.split(/\r?\n/)
+        .filter((line) => !line.startsWith('1.0;usuarios_inatividade.csv;'))
+        .join('\n'),
+      'utf8',
+    );
+    await writeFile(
+      resolve(testDataPath, 'usuarios.csv'),
+      'tipo_registro;mes;empresa_id_opaco;total_usuarios;ativos_por_status;inativos_por_status;inativados_por_inadimplencia;novos_usuarios;posicao\n' +
+        'snapshot_status_atual;2026-09;;411;331;70;10;;\n' +
+        'novos_usuarios_mes;2026-08;;;;;;30;\n' +
+        'novos_usuarios_mes;2026-09;;;;;;45;\n' +
+        'ranking_novos_usuarios_empresa;2026-09;EMP-001;;;;;13;1\n',
+      'utf8',
+    );
+    await rm(resolve(testDataPath, 'usuarios_inatividade.csv'));
+
+    const response = await page.request.get('/api/usuarios');
+    const payload = await response.json();
+    expect(payload.status).toBe('stale');
+    expect(payload.indicators.currentTotal).toBe(411);
+    expect(payload.indicators.currentNewUsers).toBe(45);
+    expect(payload.indicators.inactive30Days).toBe(64);
+    expect(payload.warnings).toEqual([
+      'usuarios_inatividade.csv: fonte não atualizada; arquivo ausente do manifesto.',
+    ]);
+    expect(payload.rejections).toHaveLength(1);
+    expect(payload.rejections[0]).toMatchObject({
+      file: 'usuarios_inatividade.csv',
+      reasons: ['usuarios_inatividade.csv: fonte não atualizada; arquivo ausente do manifesto.'],
+    });
+    expect(payload.rejections[0].attemptedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  test('estados ready, stale, partial e unavailable preservam cache e rejeições sem conteúdo de linha', async ({ page }) => {
+    await page.goto('/painel.html');
+    const initial = await readIntegratedPayloads(page);
+    expect(Object.values(initial).every((payload) => payload.status === 'ready')).toBe(true);
+
+    const sensitiveMarker = 'synthetic-secret@example.test';
+    await writeFile(
+      resolve(testDataPath, 'acessos.csv'),
+      'mes;produto_digital;total_logins;usuarios_unicos;empresas_clientes_distintas;email\n' +
+        `2026-09;Portal Web;99999;10;2;${sensitiveMarker}\n`,
+      'utf8',
+    );
+    await rm(resolve(testDataPath, 'telas_portal.csv'));
+
+    const staleAccess = await page.request.get('/api/acessos').then((response) => response.json());
+    const stalePortal = await page.request.get('/api/telas-portal').then((response) => response.json());
+    expect(staleAccess.status).toBe('stale');
+    expect(staleAccess.indicators.combinations).toContainEqual(expect.objectContaining({
+      month: '2026-09', product: 'Portal Web', totalLogins: 1200,
+    }));
+    expect(stalePortal.status).toBe('stale');
+    expect(stalePortal.indicators.totalViews).toBe(12480);
+    expect(stalePortal.warning).toContain('arquivo ausente');
+
+    const rejections = [...staleAccess.rejections, stalePortal.rejection];
+    for (const rejection of rejections) {
+      expect(Object.keys(rejection).sort()).toEqual(['attemptedAt', 'file', 'reasons']);
+      expect(rejection.file).toMatch(/\.csv$/);
+      expect(rejection.attemptedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      expect(rejection.reasons.length).toBeGreaterThan(0);
+    }
+    expect(JSON.stringify(rejections)).not.toContain(sensitiveMarker);
+    expect(JSON.stringify(rejections)).not.toContain('99999');
+
+    await rm(resolve(testCachePath, 'acessos.json'));
+    const partialAccess = await page.request.get('/api/acessos').then((response) => response.json());
+    expect(partialAccess.status).toBe('partial');
+    expect(partialAccess.fileStates).toEqual({ access: 'unavailable', ranking: 'ready' });
+    expect(partialAccess.indicators.combinations).toEqual([]);
+    expect(partialAccess.ranking).not.toEqual([]);
+
+    await rm(resolve(testCachePath, 'telas_aplicativo.json'));
+    await writeFile(
+      resolve(testDataPath, 'telas_aplicativo.csv'),
+      'periodo;produto;fonte;propriedade;property_id;tipo_registro;item;contagem;usuarios;unidade_contagem;metrica_usuarios;evidencia;observacao\n' +
+        '2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;total_telas;Total;77777;;visualizacoes;;derivado;Tentativa sintética recusada\n',
+      'utf8',
+    );
+    const unavailableApplication = await page.request.get('/api/telas-aplicativo').then((response) => response.json());
+    expect(unavailableApplication.status).toBe('unavailable');
+    expect(unavailableApplication.indicators.totalViews).toBeNull();
+    expect(JSON.stringify(unavailableApplication.rejection)).not.toContain('77777');
+    expect(JSON.stringify(unavailableApplication.rejection)).not.toContain('Tentativa sintética recusada');
+
+    const stillReady = await Promise.all([
+      page.request.get('/api/usuarios').then((response) => response.json()),
+      page.request.get('/api/empresas').then((response) => response.json()),
+    ]);
+    expect(stillReady.map((payload) => payload.status)).toEqual(['ready', 'ready']);
+  });
+});
+
+
+
+test('Issue #9 · seis abas mantêm teclado, foco visível, movimento reduzido e leitura nos viewports exigidos', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+
+  for (const viewport of [
+    { width: 1920, height: 1080 },
+    { width: 1366, height: 768 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/painel.html');
+    const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+    const tabs = navigation.getByRole('tab');
+    await expect(tabs).toHaveCount(6);
+
+    for (const [tabName, headingName] of areas) {
+      const tab = navigation.getByRole('tab', { name: tabName, exact: true });
+      await tab.click();
+      await expect(tab).toHaveAttribute('aria-selected', 'true');
+      await expect(page.getByRole('heading', { name: headingName, exact: true })).toBeVisible();
+      const activePanel = page.locator('.panel.active');
+      await expect(activePanel).toHaveCSS('animation-name', 'none');
+      expect(await activePanel.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    }
+  }
+
+  const development = page.getByRole('tab', { name: 'Desenvolvimento', exact: true });
+  await development.press('Home');
+  const overview = page.getByRole('tab', { name: 'Visão geral', exact: true });
+  await expect(overview).toBeFocused();
+  const focusStyle = await overview.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
+  });
+  expect(focusStyle.outlineStyle).not.toBe('none');
+  expect(Number.parseFloat(focusStyle.outlineWidth)).toBeGreaterThan(0);
+});

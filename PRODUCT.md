@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-HTML, CSS e JavaScript sem framework, servidos por um processo Node.js local restrito a `127.0.0.1`. A primeira fatia funcional lê arquivos agregados de Usuários em uma Pasta de Dados local e mantém um cache local da última carga válida, sem conexão direta com banco, API ou outro aplicativo.
+HTML, CSS e JavaScript sem framework, servidos por um processo Node.js local restrito a `127.0.0.1`. A versão funcional lê sete arquivos agregados canônicos e um manifesto em uma Pasta de Dados local, valida cada conjunto de forma independente e mantém um cache local da última carga válida, sem conexão direta com banco, API ou outro aplicativo.
 
 ## Users
 
@@ -33,11 +33,11 @@ O Painel de Indicadores organiza em uma mesma narrativa os indicadores da Lyra M
 ## Capabilities and Constraints
 
 - Seis abas navegáveis: Visão geral; Usuários e Acessos; Empresas; Telas; Loja e Pedidos; Desenvolvimento.
-- Os indicadores de Usuários aceitam agregados anonimizados da Pasta de Dados; as demais áreas permanecem com dados fictícios até suas respectivas fatias funcionais.
-- Filtros apenas visuais nesta etapa.
+- Usuários, Acessos, Empresas Clientes e Telas aceitam agregados anonimizados aderentes aos contratos da Pasta de Dados; Loja, Pedidos, Franquias, Baixas de Usuário e suspensões recentes permanecem indisponíveis até receberem fontes adequadas.
+- Os filtros de Período de Análise e Produto Digital recalculam somente combinações sustentadas pelos arquivos validados; lacunas permanecem não informadas.
 - A Carga Manual de Dados não realiza conexão direta com sistemas externos e preserva a última versão válida por conjunto.
 - A área de Desenvolvimento permanece “em definição”, sem métricas inventadas.
-- A aprovação do MVP é visual; filtros e cálculos funcionais serão decididos depois.
+- O baseline visual aprovado permanece preservado; a validação funcional cobre carga, navegação, proveniência, estados e lacunas.
 - O vocabulário canônico está em `GLOSSARY.md`.
 - As regras completas estão em `ESPECIFICACAO_MVP.md`.
 
@@ -50,7 +50,7 @@ O Painel de Indicadores organiza em uma mesma narrativa os indicadores da Lyra M
 
 ## Evidence on Hand
 
-Não há logotipo nem identidade visual detalhada aprovada além do baseline atual. Os indicadores de Usuários podem usar somente agregados anonimizados aderentes ao contrato; arquivos brutos e PII não entram no painel nem no Git. As demais áreas devem continuar identificadas como fictícias até receberem fontes validadas, e ilustrações nunca devem ser apresentadas como capturas reais do produto.
+Não há logotipo nem identidade visual detalhada aprovada além do baseline atual. Os conjuntos funcionais podem usar somente agregados anonimizados aderentes aos contratos; arquivos brutos e PII não entram no painel nem no Git. Áreas ainda sem contrato permanecem indisponíveis, sem números inventados, e ilustrações nunca devem ser apresentadas como capturas reais do produto.
 
 ## Product Principles
 

@@ -196,7 +196,7 @@ function composeUserData(userPart, inactivityPart, warnings, rejections = []) {
 export async function loadUserData(dataDir, cacheDir) {
   let manifest;
   try {
-    manifest = await loadManifest(dataDir, ['usuarios.csv', 'usuarios_inatividade.csv']);
+    manifest = await loadManifest(dataDir);
   } catch (error) {
     if (!(error instanceof DataContractError)) throw error;
     const [usersCache, inactivityCache] = await Promise.all([
