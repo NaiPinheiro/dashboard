@@ -1,0 +1,11 @@
+mes;produto_digital;posicao;empresa_id_opaco;total_logins;usuarios_unicos
+2026-08;Portal Web;1;EMP-ALFA;380;44
+2026-08;Portal Web;2;EMP-BETA;260;31
+2026-08;Aplicativo;1;EMP-ALFA;120;26
+2026-09;Portal Web;1;EMP-ALFA;500;60
+2026-09;Portal Web;2;EMP-BETA;300;30
+2026-09;Portal Web;3;EMP-GAMA;300;28
+2026-09;Loja Web;1;EMP-BETA;110;25
+2026-09;Loja Web;2;EMP-GAMA;90;22
+2026-09;Aplicativo;1;EMP-ALFA;180;35
+2026-09;Aplicativo;2;EMP-GAMA;140;29

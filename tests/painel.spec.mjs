@@ -1,4 +1,4 @@
-import { cp, mkdir, rename, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 
@@ -18,7 +18,7 @@ async function stageValidUserLoad() {
 test.beforeEach(stageValidUserLoad);
 
 const areas = [
-  ['Visão geral', 'Visão geral de setembro'],
+  ['Visão geral', 'Visão geral de setembro de 2026'],
   ['Usuários e Acessos', 'Usuários e Acessos'],
   ['Empresas', 'Empresas Clientes'],
   ['Telas', 'Telas mais acessadas'],
@@ -26,12 +26,67 @@ const areas = [
   ['Desenvolvimento', 'Indicadores de Desenvolvimento'],
 ];
 
+async function expectVisibleSourceMetadata(page, fileName, expected) {
+  const metadata = page.locator(`[data-source-file="${fileName}"]:visible`);
+  await expect(metadata.first()).toBeVisible();
+  const text = (await metadata.allTextContents()).join(' ');
+  expect(text).toContain('Contrato: 1.0');
+  expect(text).toMatch(/Gera(?:ção|do em): 30\/09\/2026/);
+  expect(text).toContain(expected.period);
+  expect(text).toContain(`Origem: ${expected.origin}`);
+  expect(text).toContain(`Estado: ${expected.state}`);
+  expect(text).toMatch(/(?:Arquivo|Período|Fotografia) (?:completo|completa|parcial)/);
+}
+
+async function inspectVisiblePanelBounds(page) {
+  return page.locator('.panel.active').evaluate((panel) => {
+    const label = (element) => element.id || element.getAttribute('aria-label') || element.querySelector('h1,h2,h3,strong')?.textContent?.trim() || element.className;
+    const rendered = (element) => {
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+    };
+    const essentials = [...panel.querySelectorAll('.page-heading,.card,.summary-band,.not-available,.dev-empty,table')].filter(rendered);
+    const outsideViewport = essentials
+      .filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return rect.left < -1 || rect.right > window.innerWidth + 1;
+      })
+      .map(label);
+    const clippedContainers = [...panel.querySelectorAll('.card,.summary-band,.not-available,.dev-empty')]
+      .filter(rendered)
+      .filter((element) => element.scrollWidth > element.clientWidth + 1)
+      .map(label);
+    const overlaps = [];
+    for (const grid of panel.querySelectorAll('.section-grid,.hero-grid,.content-grid')) {
+      const children = [...grid.children].filter(rendered);
+      for (let leftIndex = 0; leftIndex < children.length; leftIndex += 1) {
+        const left = children[leftIndex].getBoundingClientRect();
+        for (let rightIndex = leftIndex + 1; rightIndex < children.length; rightIndex += 1) {
+          const right = children[rightIndex].getBoundingClientRect();
+          const overlapWidth = Math.min(left.right, right.right) - Math.max(left.left, right.left);
+          const overlapHeight = Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top);
+          if (overlapWidth > 1 && overlapHeight > 1) overlaps.push(`${label(children[leftIndex])} <> ${label(children[rightIndex])}`);
+        }
+      }
+    }
+    const heading = panel.querySelector('.page-heading');
+    const headingRect = heading?.getBoundingClientRect();
+    return {
+      clippedContainers,
+      outsideViewport,
+      overlaps,
+      headingVisible: Boolean(headingRect && headingRect.top >= -1 && headingRect.bottom <= window.innerHeight + 1),
+    };
+  });
+}
+
 test('a gerente percorre as seis áreas do MVP do Painel', async ({ page }) => {
   await page.goto('/painel.html');
 
   await expect(page).toHaveTitle(/Painel de Indicadores/);
   await expect(
-    page.getByText('Dados mistos · Usuários carregados; demais indicadores fictícios'),
+    page.getByText('Dados mistos · 5 fontes disponíveis; lacunas sinalizadas'),
   ).toBeVisible();
 
   const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
@@ -61,7 +116,7 @@ test('a gerente percorre as seis áreas do MVP do Painel', async ({ page }) => {
   await expect(overview).toBeFocused();
   await expect(overview).toHaveAttribute('aria-selected', 'true');
   await expect(
-    page.getByRole('heading', { name: 'Visão geral de setembro', exact: true }),
+    page.getByRole('heading', { name: 'Visão geral de setembro de 2026', exact: true }),
   ).toBeVisible();
 
   await overview.press('ArrowRight');
@@ -89,13 +144,14 @@ test('a gerente vê os indicadores de Usuários vindos de uma carga válida', as
   await expect(usersPanel.getByText('44', { exact: true })).toBeVisible();
   await expect(usersPanel.getByText('64', { exact: true })).toBeVisible();
   await expect(usersPanel.getByText('Indisponível', { exact: true })).toBeVisible();
-  await expect(usersPanel.getByText('Origem: MySQL · Estado: pronto', { exact: true })).toHaveCount(2);
-  await expect(usersPanel.getByText('Abrangência: 01/08/2026 a 30/09/2026', { exact: true })).toBeVisible();
+  const usersSource = usersPanel.getByRole('article', { name: 'Estado dos arquivos de Usuários' });
+  await expect(usersSource.getByText('Origem: MySQL · Estado: pronto', { exact: true })).toHaveCount(2);
+  await expect(usersSource.getByText('Abrangência: 01/08/2026 a 30/09/2026', { exact: true })).toBeVisible();
 
   await navigation.getByRole('tab', { name: 'Empresas', exact: true }).click();
   const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
   await expect(companiesPanel.getByText('EMP-001', { exact: true })).toBeVisible();
-  await expect(companiesPanel.getByText('12', { exact: true })).toBeVisible();
+  await expect(companiesPanel.locator('#users-ranking').getByText('12', { exact: true })).toBeVisible();
 
   const privateFileResponse = await page.request.get('/tests/fixtures/carga-usuarios-valida/usuarios.csv');
   expect(privateFileResponse.status()).toBe(404);
@@ -106,7 +162,7 @@ test('a gerente vê os indicadores de Usuários vindos de uma carga válida', as
 
 test('uma tentativa inválida preserva a última carga válida de Usuários', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; demais indicadores fictícios')).toBeVisible();
+  await expect(page.getByText('Dados mistos · 5 fontes disponíveis; lacunas sinalizadas')).toBeVisible();
 
   await writeFile(
     resolve(testDataPath, 'usuarios.csv'),
@@ -119,8 +175,8 @@ test('uma tentativa inválida preserva a última carga válida de Usuários', as
 
   const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
   await navigation.getByRole('tab', { name: 'Usuários e Acessos', exact: true }).click();
-  await expect(page.getByText('Última carga válida preservada')).toBeVisible();
   const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
+  await expect(usersPanel.getByText('Última carga válida preservada')).toBeVisible();
   await expect(usersPanel.getByText('410', { exact: true })).toBeVisible();
   await expect(usersPanel.getByText('999', { exact: true })).toHaveCount(0);
   await expect(usersPanel.getByText('pessoa@example.com', { exact: true })).toHaveCount(0);
@@ -165,7 +221,7 @@ test('sem cache anterior, somente o conjunto inválido aparece como Indisponíve
 
 test('o contrato rejeita duplicidade, total negativo, PII e período inválido sem perder a carga ativa', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; demais indicadores fictícios')).toBeVisible();
+  await expect(page.getByText('Dados mistos · 5 fontes disponíveis; lacunas sinalizadas')).toBeVisible();
 
   const invalidAttempts = [
     {
@@ -220,7 +276,7 @@ test('o contrato rejeita duplicidade, total negativo, PII e período inválido s
     await navigation.getByRole('tab', { name: 'Usuários e Acessos', exact: true }).click();
     const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
     const totalCard = usersPanel.locator('article').filter({ hasText: 'Total existente' });
-    await expect(usersPanel.getByText('Última carga válida preservada')).toBeVisible();
+    await expect(usersPanel.locator('#users-source-state')).toHaveText('Última carga válida preservada');
     await expect(totalCard.getByText('410', { exact: true })).toBeVisible();
   }
 });
@@ -240,7 +296,7 @@ test('sem JavaScript, indicadores funcionais não exibem valores fictícios', as
 
 test('um backup íntegro recupera a última carga quando a troca do cache é interrompida', async ({ page }) => {
   await page.goto('/painel.html');
-  await expect(page.getByText('Dados mistos · Usuários carregados; demais indicadores fictícios')).toBeVisible();
+  await expect(page.getByText('Dados mistos · 5 fontes disponíveis; lacunas sinalizadas')).toBeVisible();
 
   const userCache = resolve(testCachePath, 'usuarios.json');
   const userBackup = resolve(testCachePath, 'usuarios.json.bak');
@@ -259,4 +315,1174 @@ test('um backup íntegro recupera a última carga quando a troca do cache é int
   const totalCard = usersPanel.locator('article').filter({ hasText: 'Total existente' });
   await expect(usersPanel.getByText('Última carga válida preservada')).toBeVisible();
   await expect(totalCard.getByText('410', { exact: true })).toBeVisible();
+});
+
+
+test('o Portal mostra somente o total derivado e mantém visualizações por tela não validadas', async ({ page }) => {
+  await page.goto('/painel.html');
+  const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+  await navigation.getByRole('tab', { name: 'Telas', exact: true }).click();
+
+  const screensPanel = page.getByRole('tabpanel', { name: 'Telas' });
+  const portalCard = screensPanel.locator('article').filter({ hasText: 'Portal · Lyra M2M' });
+  await expect(portalCard.getByText('12.480', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Estimativa derivada', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Visualizações por tela: Não validado', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Ausência no ranking não representa zero', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('O export geral preserva somente as 12 URLs principais', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Rotas fora do ranking permanecem sem cobertura validada', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Origem: Microsoft Clarity · Estado: parcial', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Abrangência: 01/08/2026 a 30/09/2026', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Período parcial', { exact: true })).toBeVisible();
+
+  await expect(screensPanel.getByText('720', { exact: true })).toHaveCount(0);
+  await expect(screensPanel.getByText('77', { exact: true })).toHaveCount(0);
+  await expect(screensPanel.getByText('900', { exact: true })).toHaveCount(0);
+  await expect(screensPanel.getByText('1.300', { exact: true })).toHaveCount(0);
+  await expect(screensPanel.getByText('50.000', { exact: true })).toHaveCount(0);
+  await expect(screensPanel.getByText('Dashboard', { exact: true })).toHaveCount(0);
+});
+
+test('um telas_portal.csv inválido preserva o cache válido sem expor conteúdo rejeitado', async ({ page }) => {
+  await page.goto('/painel.html');
+  await writeFile(
+    resolve(testDataPath, 'telas_portal.csv'),
+    'periodo;produto;fonte;escopo;metrica;tela_ou_funcao;valor;unidade;evidencia;observacao;email\n' +
+      '2026-08-01 a 2026-09-30;Portal M2M;Microsoft Clarity;producao;visualizacoes_de_pagina_total;segredo@example.com;99999;visualizacoes;derivado;Inválido;segredo@example.com\n',
+    'utf8',
+  );
+
+  const rejectionResponse = await page.request.get('/api/telas-portal');
+  const rejectionPayload = await rejectionResponse.json();
+  expect(rejectionPayload.rejection).toMatchObject({ file: 'telas_portal.csv' });
+  expect(rejectionPayload.rejection.attemptedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  expect(rejectionPayload.rejection.reasons).toEqual([
+    'telas_portal.csv: cabeçalho incompatível ou com colunas extras.',
+  ]);
+  expect(JSON.stringify(rejectionPayload.rejection)).not.toContain('segredo@example.com');
+
+  await page.reload();
+  const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+  await navigation.getByRole('tab', { name: 'Telas', exact: true }).click();
+  const portalCard = page.getByRole('tabpanel', { name: 'Telas' }).locator('article').filter({ hasText: 'Portal · Lyra M2M' });
+  await expect(portalCard.getByText('Última carga válida preservada', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('12.480', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('99.999', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('segredo@example.com', { exact: false })).toHaveCount(0);
+});
+
+test('telas_portal.csv ausente preserva o cache e avisa que a fonte não foi atualizada', async ({ page }) => {
+  await page.goto('/painel.html');
+  await rm(resolve(testDataPath, 'telas_portal.csv'));
+
+  await page.reload();
+  const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+  await navigation.getByRole('tab', { name: 'Telas', exact: true }).click();
+  const portalCard = page.getByRole('tabpanel', { name: 'Telas' }).locator('article').filter({ hasText: 'Portal · Lyra M2M' });
+  await expect(portalCard.getByText('Fonte não atualizada', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('12.480', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('Visualizações por tela: Não validado', { exact: true })).toBeVisible();
+});
+
+
+test('sem cache, telas do Portal inválidas ficam indisponíveis e nunca viram zero', async ({ page }) => {
+  await writeFile(
+    resolve(testDataPath, 'telas_portal.csv'),
+    'periodo;produto;fonte;escopo;metrica;tela_ou_funcao;valor;unidade;evidencia;observacao\n' +
+      '2026-08-01 a 2026-09-30;Portal M2M;Microsoft Clarity;producao;visualizacoes_por_tela;Top 12;0;visualizacoes;nao_validado;Ausência não é zero\n',
+    'utf8',
+  );
+
+  await page.goto('/painel.html');
+  const unavailableResponse = await page.request.get('/api/telas-portal');
+  const unavailablePayload = await unavailableResponse.json();
+  expect(unavailablePayload.status).toBe('unavailable');
+  expect(unavailablePayload.indicators.excludedLocalRows).toBeNull();
+  expect(unavailablePayload.indicators.excludedSessionOrEventRows).toBeNull();
+
+  const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+  await navigation.getByRole('tab', { name: 'Telas', exact: true }).click();
+  const portalCard = page.getByRole('tabpanel', { name: 'Telas' }).locator('article').filter({ hasText: 'Portal · Lyra M2M' });
+  await expect(portalCard.getByText('Indisponível', { exact: true })).toBeVisible();
+  await expect(portalCard.getByText('0', { exact: true })).toHaveCount(0);
+  await expect(portalCard.getByText('Visualizações por tela: Não validado', { exact: true })).toBeVisible();
+});
+
+
+test('Loja, Pedidos, Franquias e suspensões recentes permanecem sem números inventados', async ({ page }) => {
+  await page.goto('/painel.html');
+
+  const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+  await expect(overview.locator('article').filter({ hasText: 'Pedidos criados' }).getByText('Indisponível', { exact: true })).toBeVisible();
+  await expect(overview.locator('article').filter({ hasText: 'Suspensões recentes' }).getByText('Indisponível', { exact: true })).toBeVisible();
+  await expect(overview.getByText('184', { exact: true })).toHaveCount(0);
+  await expect(overview.getByText('5', { exact: true })).toHaveCount(0);
+
+  const dashboard = page.locator('main');
+  await expect(dashboard.getByText('1.428', { exact: true })).toHaveCount(0);
+  await expect(dashboard.getByText('184 pedidos no período', { exact: true })).toHaveCount(0);
+  await expect(dashboard.getByText('2.740 chips', { exact: true })).toHaveCount(0);
+  await expect(dashboard.getByText('Os logins da Loja aparecem na aba Loja e Pedidos.', { exact: true })).toHaveCount(0);
+
+  const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+  await navigation.getByRole('tab', { name: 'Loja e Pedidos', exact: true }).click();
+  const storePanel = page.getByRole('tabpanel', { name: 'Loja e Pedidos' });
+  await expect(storePanel.locator('.not-available').filter({ hasText: 'Dados futuros' })).toHaveCount(3);
+});
+
+test('os metadados do Portal não sobrepõem o cartão do Aplicativo em 1024x768', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto('/painel.html');
+  await page.getByRole('tablist', { name: 'Áreas do painel' })
+    .getByRole('tab', { name: 'Telas', exact: true })
+    .click();
+
+  const portalCard = page.locator('#portal-screens-card');
+  const applicationCard = page.getByRole('tabpanel', { name: 'Telas' })
+    .locator('article')
+    .filter({ hasText: 'Aplicativo · Lyra M2M' });
+  const layout = await page.evaluate(() => {
+    const portal = document.querySelector('#portal-screens-card').getBoundingClientRect();
+    const application = [...document.querySelectorAll('#screens article')]
+      .find((element) => element.textContent.includes('Aplicativo · Lyra M2M'))
+      .getBoundingClientRect();
+    const metadataChildren = [...document.querySelectorAll('#portal-screens-card .source-file-row > *')]
+      .map((element) => element.getBoundingClientRect());
+    return {
+      cardsStacked: application.top >= portal.bottom - 1,
+      metadataInsidePortal: metadataChildren.every((item) => item.right <= portal.right + 1),
+    };
+  });
+
+  await expect(portalCard).toBeVisible();
+  await expect(applicationCard).toBeVisible();
+  expect(layout.cardsStacked || layout.metadataInsidePortal).toBe(true);
+});
+
+
+
+test('Issue #5 classifica empresas por si_status, mantém status para auditoria e mostra metadados', async ({ page }) => {
+  await page.goto('/painel.html');
+
+  const response = await page.request.get('/api/empresas');
+  expect(response.status()).toBe(200);
+  const payload = await response.json();
+  expect(payload).toMatchObject({
+    status: 'ready',
+    indicators: {
+      active: 24,
+      inactive: 8,
+      suspendedCurrent: 7,
+      suspendedLast30Days: null,
+      excludedWaitApproval: 9,
+      unclassifiedTotal: 11,
+    },
+  });
+  expect(payload.indicators.statusAudit).toContainEqual({
+    status: 'Operacional',
+    siStatus: 'Production',
+    category: 'active',
+    quantity: 12,
+  });
+
+  const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+  await navigation.getByRole('tab', { name: 'Empresas', exact: true }).click();
+  const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
+  await expect(companiesPanel.locator('[data-company-value="active"]')).toHaveText('24');
+  await expect(companiesPanel.locator('[data-company-value="inactive"]')).toHaveText('8');
+  await expect(companiesPanel.locator('[data-company-value="suspended-current"]')).toHaveText('7');
+  await expect(companiesPanel.locator('[data-company-value="suspended-30-days"]')).toHaveText('Indisponível');
+  await expect(companiesPanel.getByText('Status não classificado: novo_status · 11 fora dos totais', { exact: true })).toBeVisible();
+  await expect(companiesPanel.getByText('wait_aprovement · 9 fora dos indicadores', { exact: true })).toBeVisible();
+  await expect(companiesPanel.getByText('Operacional', { exact: true }).first()).toBeVisible();
+  await expect(companiesPanel.getByText('Production', { exact: true })).toBeVisible();
+  await expect(companiesPanel.getByRole('article', { name: 'Estado do arquivo de Empresas Clientes' })
+    .getByText('Origem: MySQL · Estado: pronto', { exact: true })).toBeVisible();
+  await expect(companiesPanel.getByText('Referência: 30/09/2026', { exact: true })).toBeVisible();
+  await expect(companiesPanel.getByText('Gerado em:', { exact: false })).toBeVisible();
+  await expect(companiesPanel.getByText('empresas.csv é uma fotografia atual e não informa quando ocorreu cada suspensão.', { exact: true })).toBeVisible();
+});
+
+
+test('Issue #5 preserva o cache válido quando empresas.csv é rejeitado sem expor linhas', async ({ page }) => {
+  await page.goto('/painel.html');
+  await writeFile(
+    resolve(testDataPath, 'empresas.csv'),
+    'status;si_status;quantidade;email\n' +
+      'Operacional;Production;999;segredo@example.com\n',
+    'utf8',
+  );
+
+  const response = await page.request.get('/api/empresas');
+  const payload = await response.json();
+  expect(payload.status).toBe('stale');
+  expect(payload.indicators.active).toBe(24);
+  expect(payload.rejection).toMatchObject({ file: 'empresas.csv' });
+  expect(payload.rejection.attemptedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  expect(payload.rejection.reasons).toEqual([
+    'empresas.csv: cabeçalho incompatível ou com colunas extras.',
+  ]);
+  expect(JSON.stringify(payload.rejection)).not.toContain('segredo@example.com');
+
+  await page.reload();
+  await page.getByRole('tablist', { name: 'Áreas do painel' })
+    .getByRole('tab', { name: 'Empresas', exact: true })
+    .click();
+  const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
+  await expect(companiesPanel.locator('#companies-source-state')).toHaveText('Última carga válida preservada');
+  await expect(companiesPanel.locator('[data-company-value="active"]')).toHaveText('24');
+  await expect(companiesPanel.getByText('999', { exact: true })).toHaveCount(0);
+  await expect(companiesPanel.getByText('segredo@example.com', { exact: false })).toHaveCount(0);
+});
+
+
+test('Issue #5 avisa quando empresas.csv está ausente e preserva a última versão válida', async ({ page }) => {
+  await page.goto('/painel.html');
+  await rm(resolve(testDataPath, 'empresas.csv'));
+
+  await page.reload();
+  await page.getByRole('tablist', { name: 'Áreas do painel' })
+    .getByRole('tab', { name: 'Empresas', exact: true })
+    .click();
+  const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
+  await expect(companiesPanel.getByText('Fonte não atualizada', { exact: true })).toBeVisible();
+  await expect(companiesPanel.locator('[data-company-value="active"]')).toHaveText('24');
+  await expect(companiesPanel.locator('[data-company-value="suspended-30-days"]')).toHaveText('Indisponível');
+});
+
+
+test('Issue #5 sem cache deixa empresas inválidas indisponíveis e nunca converte ausência em zero', async ({ page }) => {
+  await writeFile(
+    resolve(testDataPath, 'empresas.csv'),
+    'status;si_status;quantidade\n' +
+      'Operacional;Production;-1\n',
+    'utf8',
+  );
+
+  await page.goto('/painel.html');
+  const response = await page.request.get('/api/empresas');
+  const payload = await response.json();
+  expect(payload.status).toBe('unavailable');
+  expect(payload.indicators.active).toBeNull();
+  expect(payload.indicators.inactive).toBeNull();
+  expect(payload.indicators.suspendedCurrent).toBeNull();
+  expect(payload.indicators.suspendedLast30Days).toBeNull();
+
+  await page.getByRole('tablist', { name: 'Áreas do painel' })
+    .getByRole('tab', { name: 'Empresas', exact: true })
+    .click();
+  const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
+  await expect(companiesPanel.locator('[data-company-value="active"]')).toHaveText('Indisponível');
+  await expect(companiesPanel.locator('[data-company-value="inactive"]')).toHaveText('Indisponível');
+  await expect(companiesPanel.locator('[data-company-value="suspended-current"]')).toHaveText('Indisponível');
+  await expect(companiesPanel.getByText('0', { exact: true })).toHaveCount(0);
+});
+
+
+test.describe('Issue #6 · Acessos e ranking', () => {
+  test('carrega combinações válidas e oferece somente filtros sustentados pelos dados', async ({ page }) => {
+    await page.goto('/painel.html');
+
+    const response = await page.request.get('/api/acessos');
+    expect(response.status()).toBe(200);
+    const payload = await response.json();
+    expect(payload).toMatchObject({
+      status: 'ready',
+      indicators: {
+        combinations: [
+          { month: '2026-08', product: 'Portal Web', totalLogins: 900, uniqueUsers: 150, distinctCompanies: 12, coverage: 'ready' },
+          { month: '2026-08', product: 'Aplicativo', totalLogins: 320, uniqueUsers: 86, distinctCompanies: 9, coverage: 'partial' },
+          { month: '2026-09', product: 'Portal Web', totalLogins: 1200, uniqueUsers: 180, distinctCompanies: 14, coverage: 'ready' },
+          { month: '2026-09', product: 'Loja Web', totalLogins: 240, uniqueUsers: 75, distinctCompanies: 8, coverage: 'ready' },
+          { month: '2026-09', product: 'Aplicativo', totalLogins: 480, uniqueUsers: 102, distinctCompanies: 10, coverage: 'partial' },
+          { month: '2026-09', product: 'Loja Aplicativo', totalLogins: 0, uniqueUsers: 0, distinctCompanies: 0, coverage: 'partial' },
+        ],
+      },
+    });
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
+    const periodFilter = page.getByLabel('Período analisado');
+    const productFilter = page.getByLabel('Produto Digital');
+
+    await expect(periodFilter.locator('option')).toHaveText(['Setembro de 2026', 'Agosto de 2026']);
+    await expect(productFilter.locator('option')).toHaveText(['Portal Web', 'Loja Web', 'Aplicativo', 'Loja Aplicativo']);
+    await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('1.200');
+    await expect(usersPanel.locator('[data-access-value="unique-users"]')).toHaveText('180');
+    await expect(usersPanel.locator('[data-access-value="distinct-companies"]')).toHaveText('14');
+    await expect(usersPanel.getByText('Dados prontos', { exact: true })).toBeVisible();
+
+    await productFilter.selectOption('Aplicativo');
+    await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('480');
+    await expect(usersPanel.locator('#access-coverage')).toHaveText('Cobertura parcial');
+
+    await periodFilter.selectOption('2026-08');
+    await expect(productFilter).toHaveValue('Aplicativo');
+    await expect(productFilter.locator('option')).toHaveText(['Portal Web', 'Aplicativo']);
+    await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('320');
+    await expect(usersPanel.getByText('Loja Web e Loja Aplicativo: não informado neste período.', { exact: true })).toBeVisible();
+  });
+
+  test('ordena o ranking por logins com desempate determinístico e mostra metadados', async ({ page }) => {
+    await page.goto('/painel.html');
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Empresas', exact: true })
+      .click();
+
+    const companiesPanel = page.getByRole('tabpanel', { name: 'Empresas' });
+    const ranking = companiesPanel.locator('#access-ranking');
+    await expect(ranking.locator('tbody tr')).toHaveCount(3);
+    await expect(ranking.locator('tbody tr').nth(0)).toContainText('EMP-ALFA');
+    await expect(ranking.locator('tbody tr').nth(1)).toContainText('EMP-BETA');
+    await expect(ranking.locator('tbody tr').nth(2)).toContainText('EMP-GAMA');
+    await expect(ranking.locator('tbody tr').nth(1)).toContainText('300');
+    await expect(ranking.locator('tbody tr').nth(1)).toContainText('30');
+    await expect(ranking.getByText('Origem: MySQL · Estado: pronto', { exact: true })).toBeVisible();
+    await expect(ranking.getByText('Abrangência: 01/08/2026 a 30/09/2026', { exact: true })).toBeVisible();
+    await expect(companiesPanel.getByText('Ranking de setembro de 2026 · Portal Web', { exact: true })).toBeVisible();
+
+    await page.getByLabel('Produto Digital').selectOption('Aplicativo');
+    await expect(ranking.locator('tbody tr')).toHaveCount(2);
+    await expect(companiesPanel.getByText('Ranking com cobertura parcial', { exact: true })).toBeVisible();
+  });
+
+  test('preserva caches válidos por arquivo após rejeição e não registra conteúdo das linhas', async ({ page }) => {
+    await page.goto('/painel.html');
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    await expect(page.getByRole('tabpanel', { name: 'Usuários e Acessos' })
+      .locator('[data-access-value="total-logins"]')).toHaveText('1.200');
+    await writeFile(
+      resolve(testDataPath, 'acessos.csv'),
+      'mes;produto_digital;total_logins;usuarios_unicos;empresas_clientes_distintas;email\n' +
+        '2026-09;Portal Web;999;10;2;segredo@example.com\n',
+      'utf8',
+    );
+
+    const response = await page.request.get('/api/acessos');
+    const payload = await response.json();
+    expect(payload.status).toBe('stale');
+    expect(payload.indicators.combinations).toContainEqual({
+      month: '2026-09', product: 'Portal Web', totalLogins: 1200, uniqueUsers: 180, distinctCompanies: 14, coverage: 'ready',
+    });
+    expect(payload.rejections).toContainEqual(expect.objectContaining({ file: 'acessos.csv' }));
+    expect(JSON.stringify(payload.rejections)).not.toContain('segredo@example.com');
+    expect(payload.ranking).toEqual(expect.arrayContaining([
+      expect.objectContaining({ month: '2026-09', product: 'Portal Web', companyId: 'EMP-ALFA' }),
+    ]));
+
+    await page.reload();
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
+    await expect(usersPanel.getByText('Última carga válida de acessos preservada', { exact: true })).toBeVisible();
+    await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('1.200');
+    await expect(page.getByText('segredo@example.com', { exact: false })).toHaveCount(0);
+  });
+
+  test('rejeita usuários únicos acima dos logins e ranking fora de ordem sem perder os caches', async ({ page }) => {
+    await page.goto('/painel.html');
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    await expect(page.getByRole('tabpanel', { name: 'Usuários e Acessos' })
+      .locator('[data-access-value="total-logins"]')).toHaveText('1.200');
+
+    await writeFile(
+      resolve(testDataPath, 'acessos.csv'),
+      'mes;produto_digital;total_logins;usuarios_unicos;empresas_clientes_distintas\n' +
+        '2026-09;Portal Web;10;11;2\n',
+      'utf8',
+    );
+    let response = await page.request.get('/api/acessos');
+    let payload = await response.json();
+    expect(payload.status).toBe('stale');
+    expect(payload.rejections).toContainEqual(expect.objectContaining({
+      file: 'acessos.csv',
+      reasons: ['acessos.csv: usuarios_unicos supera total_logins na linha 2.'],
+    }));
+    expect(payload.indicators.combinations).toContainEqual(expect.objectContaining({
+      month: '2026-09', product: 'Portal Web', totalLogins: 1200,
+    }));
+
+    await cp(resolve(validLoadPath, 'acessos.csv'), resolve(testDataPath, 'acessos.csv'));
+    await writeFile(
+      resolve(testDataPath, 'ranking_acessos.csv'),
+      'mes;produto_digital;posicao;empresa_id_opaco;total_logins;usuarios_unicos\n' +
+        '2026-09;Portal Web;1;EMP-ALFA;100;20\n' +
+        '2026-09;Portal Web;2;EMP-BETA;200;30\n',
+      'utf8',
+    );
+    response = await page.request.get('/api/acessos');
+    payload = await response.json();
+    expect(payload.status).toBe('stale');
+    expect(payload.rejections).toContainEqual(expect.objectContaining({
+      file: 'ranking_acessos.csv',
+      reasons: ['ranking_acessos.csv: posições não seguem ordem decrescente de logins.'],
+    }));
+    expect(payload.ranking).toContainEqual(expect.objectContaining({
+      month: '2026-09', product: 'Portal Web', companyId: 'EMP-ALFA', totalLogins: 500,
+    }));
+  });
+
+  test('mantém o ranking consultável quando acessos.csv é inválido e não há cache', async ({ page }) => {
+    await writeFile(
+      resolve(testDataPath, 'acessos.csv'),
+      'mes;produto_digital;total_logins;usuarios_unicos;empresas_clientes_distintas\n' +
+        '2026-09;Portal Web;10;11;2\n',
+      'utf8',
+    );
+
+    await page.goto('/painel.html');
+    const response = await page.request.get('/api/acessos');
+    const payload = await response.json();
+    expect(payload.status).toBe('partial');
+    expect(payload.indicators.combinations).toEqual([]);
+    expect(payload.ranking).not.toEqual([]);
+    expect(payload.rejections).toContainEqual(expect.objectContaining({ file: 'acessos.csv' }));
+
+    const periodFilter = page.getByLabel('Período analisado');
+    const productFilter = page.getByLabel('Produto Digital');
+    await expect(periodFilter).toBeEnabled();
+    await expect(productFilter).toBeEnabled();
+    await expect(periodFilter).toHaveValue('2026-09');
+    await expect(productFilter).toHaveValue('Portal Web');
+
+    const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('Indisponível');
+    await expect(usersPanel.locator('[data-access-value="unique-users"]')).toHaveText('Indisponível');
+    await expect(usersPanel.locator('[data-access-value="distinct-companies"]')).toHaveText('Indisponível');
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Empresas', exact: true })
+      .click();
+    const ranking = page.getByRole('tabpanel', { name: 'Empresas' }).locator('#access-ranking');
+    await expect(ranking.getByText('Origem: MySQL · Estado: pronto', { exact: true })).toBeVisible();
+    await expect(ranking.locator('tbody tr')).toHaveCount(3);
+    await expect(ranking.locator('tbody tr').first()).toContainText('EMP-ALFA');
+    await expect(ranking.locator('#access-ranking-coverage')).toHaveText('Ranking com dados prontos');
+    await expect(ranking.getByText('0', { exact: true })).toHaveCount(0);
+  });
+
+  test('distingue combinação ausente de zero explícito e mantém o aviso de arquivo ausente', async ({ page }) => {
+    await page.goto('/painel.html');
+    await rm(resolve(testDataPath, 'ranking_acessos.csv'));
+
+    await page.reload();
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    const usersPanel = page.getByRole('tabpanel', { name: 'Usuários e Acessos' });
+    await expect(usersPanel.getByText('Fonte do ranking não atualizada', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Produto Digital').locator('option', { hasText: 'Loja Aplicativo' })).toHaveCount(1);
+    await page.getByLabel('Produto Digital').selectOption('Loja Aplicativo');
+    await expect(usersPanel.locator('[data-access-value="total-logins"]')).toHaveText('0');
+    await expect(usersPanel.locator('[data-access-value="unique-users"]')).toHaveText('0');
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Empresas', exact: true })
+      .click();
+    const ranking = page.getByRole('tabpanel', { name: 'Empresas' }).locator('#access-ranking');
+    await expect(ranking.locator('tbody').getByText('Ranking não informado para esta combinação.', { exact: true })).toBeVisible();
+    await expect(ranking.getByText('0', { exact: true })).toHaveCount(0);
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    await page.getByLabel('Período analisado').selectOption('2026-08');
+    await expect(page.getByLabel('Produto Digital').locator('option')).toHaveText(['Portal Web', 'Aplicativo']);
+    await expect(usersPanel.getByText('Loja Web e Loja Aplicativo: não informado neste período.', { exact: true })).toBeVisible();
+  });
+
+  test('ranking inválido sem cache aparece indisponível e nunca como pronto', async ({ page }) => {
+    await writeFile(
+      resolve(testDataPath, 'ranking_acessos.csv'),
+      'mes;produto_digital;posicao;empresa_id_opaco;total_logins;usuarios_unicos\n' +
+        '2026-09;Portal Web;1;EMP-ALFA;100;20\n' +
+        '2026-09;Portal Web;2;EMP-BETA;200;30\n',
+      'utf8',
+    );
+
+    await page.goto('/painel.html');
+    const response = await page.request.get('/api/acessos');
+    const payload = await response.json();
+    expect(payload.status).toBe('partial');
+    expect(payload.ranking).toEqual([]);
+    expect(payload.rankingSource).toBeNull();
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Empresas', exact: true })
+      .click();
+    const ranking = page.getByRole('tabpanel', { name: 'Empresas' }).locator('#access-ranking');
+    await expect(ranking.locator('#access-ranking-coverage')).toHaveText('Ranking indisponível');
+    await expect(ranking.locator('#access-ranking-source-state')).toHaveText('Sem arquivo válido');
+    await expect(ranking.locator('tbody')).toContainText('Ranking indisponível sem arquivo válido.');
+    await expect(ranking.getByText('Ranking com dados prontos', { exact: true })).toHaveCount(0);
+  });
+
+  test('ranking preservado após rejeição aparece desatualizado', async ({ page }) => {
+    await page.goto('/painel.html');
+    await writeFile(
+      resolve(testDataPath, 'ranking_acessos.csv'),
+      'mes;produto_digital;posicao;empresa_id_opaco;total_logins;usuarios_unicos\n' +
+        '2026-09;Portal Web;1;EMP-ALFA;100;20\n' +
+        '2026-09;Portal Web;2;EMP-BETA;200;30\n',
+      'utf8',
+    );
+    await page.reload();
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Empresas', exact: true })
+      .click();
+    const ranking = page.getByRole('tabpanel', { name: 'Empresas' }).locator('#access-ranking');
+    await expect(ranking.locator('#access-ranking-coverage')).toHaveText('Ranking desatualizado');
+    await expect(ranking.locator('#access-ranking-source-state')).toHaveText('Última carga válida preservada');
+    await expect(ranking.locator('tbody tr')).toHaveCount(3);
+  });
+
+  test('aceita estado parcial e exibe todos os metadados dos dois arquivos', async ({ page }) => {
+    const manifestPath = resolve(testDataPath, 'manifesto_carga.csv');
+    const { readFile } = await import('node:fs/promises');
+    const manifest = await readFile(manifestPath, 'utf8');
+    await writeFile(
+      manifestPath,
+      manifest
+        .replace(
+          '1.0;acessos.csv;2026-09-30T23:59:00-03:00;2026-08-01;2026-09-30;false;mysql;pronto;Agregados sintéticos por mês e Produto Digital',
+          '1.0;acessos.csv;2026-09-30T23:59:00-03:00;2026-08-01;2026-09-30;true;mysql;parcial;Setembro sintético ainda incompleto',
+        )
+        .replace(
+          '1.0;ranking_acessos.csv;2026-09-30T23:59:00-03:00;2026-08-01;2026-09-30;false;mysql;pronto;Ranking sintético com empresas anônimas',
+          '1.0;ranking_acessos.csv;2026-09-30T23:59:00-03:00;2026-08-01;2026-09-30;true;mysql;parcial;Ranking sintético ainda incompleto',
+        ),
+      'utf8',
+    );
+
+    await page.goto('/painel.html');
+    const response = await page.request.get('/api/acessos');
+    const payload = await response.json();
+    expect(payload.status).toBe('ready');
+    expect(payload.source).toMatchObject({ state: 'parcial', partial: true });
+    expect(payload.rankingSource).toMatchObject({ state: 'parcial', partial: true });
+    expect(payload.indicators.combinations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ month: '2026-09', product: 'Portal Web', coverage: 'partial' }),
+      expect.objectContaining({ month: '2026-09', product: 'Loja Web', coverage: 'partial' }),
+    ]));
+    expect(payload.ranking).toEqual(expect.arrayContaining([
+      expect.objectContaining({ month: '2026-09', product: 'Portal Web', coverage: 'partial' }),
+    ]));
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Usuários e Acessos', exact: true })
+      .click();
+    const sourceSummary = page.getByRole('article', { name: 'Estado dos arquivos de Acessos' });
+    await expect(sourceSummary.getByText('Origem: MySQL · Estado: parcial', { exact: true })).toHaveCount(2);
+    await expect(sourceSummary.getByText('Abrangência: 01/08/2026 a 30/09/2026', { exact: true })).toHaveCount(2);
+    await expect(sourceSummary.getByText('Geração: 30/09/2026', { exact: false })).toHaveCount(2);
+    await expect(sourceSummary.getByText('Período parcial', { exact: true })).toHaveCount(2);
+    await expect(sourceSummary.getByText('Observação: Setembro sintético ainda incompleto', { exact: true })).toBeVisible();
+    await expect(sourceSummary.getByText('Observação: Ranking sintético ainda incompleto', { exact: true })).toBeVisible();
+    await expect(page.locator('#access-coverage')).toHaveText('Cobertura parcial');
+  });
+
+  test('mantém o cabeçalho da Visão geral coerente com o período filtrado e sem afirmação fictícia', async ({ page }) => {
+    await page.goto('/painel.html');
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.getByRole('heading', { name: 'Visão geral de setembro de 2026', exact: true })).toBeVisible();
+    await expect(overview.getByText('Leitura dos indicadores da Lyra M2M, comparada a agosto de 2026.', { exact: true })).toBeVisible();
+    await expect(overview.getByText('+8,4%', { exact: true })).toHaveCount(0);
+    await expect(overview.getByText('Mais usuários e mais logins no período', { exact: true })).toHaveCount(0);
+    await expect(overview.getByText('Comparação de Acessos', { exact: true })).toBeVisible();
+
+    await page.getByLabel('Período analisado').selectOption('2026-08');
+    await expect(overview.getByRole('heading', { name: 'Visão geral de agosto de 2026', exact: true })).toBeVisible();
+    await expect(overview.getByText('Leitura dos indicadores da Lyra M2M, comparada a julho de 2026.', { exact: true })).toBeVisible();
+    await expect(overview.getByText('Sem período anterior comparável', { exact: true })).toBeVisible();
+  });
+
+});
+
+
+test.describe('Issue #7 · Telas do Aplicativo e evidências do Google Analytics', () => {
+  test('mostra somente o total observado e mantém classes técnicas e eventos como evidências distintas', async ({ page }) => {
+    await page.goto('/painel.html');
+
+    const response = await page.request.get('/api/telas-aplicativo');
+    expect(response.status()).toBe(200);
+    const payload = await response.json();
+    expect(payload).toMatchObject({
+      status: 'ready',
+      indicators: {
+        property: { name: 'App M2M sintético', id: 'GA-PROP-TEST-01' },
+        totalViews: 7142,
+        totalEvidence: 'observado',
+        technicalClasses: [
+          { item: 'HomeActivity', count: 2210, evidence: 'observado' },
+          { item: 'LinesFragment', count: 1748, evidence: 'derivado' },
+        ],
+        eventTotals: [
+          { item: 'Total de eventos', count: 9650, users: 1204, evidence: 'observado' },
+        ],
+        events: [
+          { item: 'login', count: 930, users: 284, evidence: 'nao_validado', accessEligible: false },
+          { item: 'invoice_open', count: 612, users: 191, evidence: 'observado', accessEligible: false },
+        ],
+      },
+    });
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Telas', exact: true })
+      .click();
+    const applicationCard = page.locator('#application-screens-card');
+    await expect(applicationCard.getByText('7.142', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Total observado', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Total de eventos: 9.650 · Observado', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('HomeActivity', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('LinesFragment', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Classe técnica · Observado', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Classe técnica · Derivado', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('login', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Evento · Não validado', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('O evento login não substitui Acesso', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Origem: Google Analytics · Estado: pronto', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Abrangência: 01/08/2026 a 30/09/2026', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Propriedade: App M2M sintético · ID: GA-PROP-TEST-01', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Período completo', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Gerado em:', { exact: false })).toBeVisible();
+    await expect(applicationCard.getByText('Observação: Export sintético com classes técnicas e eventos funcionais', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Contrato: 1.0', { exact: true })).toBeVisible();
+    await expect(page.getByRole('tabpanel', { name: 'Usuários e Acessos' }).getByText('930', { exact: true })).toHaveCount(0);
+    const privateFileResponse = await page.request.get('/tests/fixtures/carga-usuarios-valida/telas_aplicativo.csv');
+    expect(privateFileResponse.status()).toBe(404);
+  });
+
+  test('mantém a coluna final dos metadados legível em 1366px', async ({ page }) => {
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await page.goto('/painel.html');
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Telas', exact: true })
+      .click();
+
+    const layout = await page.locator('#application-screens-card').evaluate((card) => {
+      const rows = [...card.querySelectorAll('.source-file-row')];
+      return rows.map((row) => {
+        const rowRect = row.getBoundingClientRect();
+        const cells = [...row.children].map((cell) => cell.getBoundingClientRect());
+        return {
+          columns: getComputedStyle(row).gridTemplateColumns.split(' ').length,
+          finalColumnWidth: cells.at(-1).width,
+          contained: cells.every((cell) => cell.right <= rowRect.right + 1),
+        };
+      });
+    });
+
+    expect(layout).toHaveLength(3);
+    expect(layout.every((row) => row.columns === 2)).toBe(true);
+    expect(layout.every((row) => row.finalColumnWidth >= 200)).toBe(true);
+    expect(layout.every((row) => row.contained)).toBe(true);
+  });
+
+  test('rejeita PII em unidade_contagem sem substituir o cache válido', async ({ page }) => {
+    await page.goto('/painel.html');
+
+    const validResponse = await page.request.get('/api/telas-aplicativo');
+    const validPayload = await validResponse.json();
+    expect(validPayload.status).toBe('ready');
+    expect(validPayload.indicators.totalViews).toBe(7142);
+
+    await writeFile(
+      resolve(testDataPath, 'telas_aplicativo.csv'),
+      'periodo;produto;fonte;propriedade;property_id;tipo_registro;item;contagem;usuarios;unidade_contagem;metrica_usuarios;evidencia;observacao\n' +
+        '2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;total_telas;Total;99999;;pessoa@example.com;;observado;Tentativa sintética recusada\n',
+      'utf8',
+    );
+
+    const rejectedResponse = await page.request.get('/api/telas-aplicativo');
+    const rejectedPayload = await rejectedResponse.json();
+    expect(rejectedPayload.status).toBe('stale');
+    expect(rejectedPayload.indicators.totalViews).toBe(7142);
+    expect(rejectedPayload.rejection).toMatchObject({
+      file: 'telas_aplicativo.csv',
+      reasons: ['telas_aplicativo.csv: conteúdo contém PII conhecida na linha 2.'],
+    });
+    expect(rejectedPayload.rejection.attemptedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(JSON.stringify(rejectedPayload)).not.toContain('pessoa@example.com');
+
+    const cacheText = await readFile(resolve(testCachePath, 'telas_aplicativo.json'), 'utf8');
+    const rejectionLog = await readFile(resolve(testCachePath, 'validation-rejections.jsonl'), 'utf8');
+    expect(cacheText).not.toContain('pessoa@example.com');
+    expect(rejectionLog).not.toContain('pessoa@example.com');
+
+    await rm(resolve(testDataPath, 'telas_aplicativo.csv'));
+    const missingResponse = await page.request.get('/api/telas-aplicativo');
+    const missingPayload = await missingResponse.json();
+    expect(missingPayload.status).toBe('stale');
+    expect(missingPayload.indicators.totalViews).toBe(7142);
+    expect(JSON.stringify(missingPayload)).not.toContain('pessoa@example.com');
+  });
+
+  test('rejeita total não observado e preserva o cache sem registrar conteúdo da linha', async ({ page }) => {
+    await page.goto('/painel.html');
+    await writeFile(
+      resolve(testDataPath, 'telas_aplicativo.csv'),
+      'periodo;produto;fonte;propriedade;property_id;tipo_registro;item;contagem;usuarios;unidade_contagem;metrica_usuarios;evidencia;observacao\n' +
+        '2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;total_telas;Total;99999;;visualizacoes;;derivado;Tentativa sintética recusada\n',
+      'utf8',
+    );
+
+    const response = await page.request.get('/api/telas-aplicativo');
+    const payload = await response.json();
+    expect(payload.status).toBe('stale');
+    expect(payload.indicators.totalViews).toBe(7142);
+    expect(payload.rejection).toMatchObject({ file: 'telas_aplicativo.csv' });
+    expect(payload.rejection.attemptedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(payload.rejection.reasons).toEqual([
+      'telas_aplicativo.csv: total_telas deve ter contagem observada na linha 2.',
+    ]);
+    expect(JSON.stringify(payload.rejection)).not.toContain('99999');
+    expect(JSON.stringify(payload.rejection)).not.toContain('Tentativa sintética recusada');
+
+    await page.reload();
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Telas', exact: true })
+      .click();
+    const applicationCard = page.locator('#application-screens-card');
+    await expect(applicationCard.getByText('Última carga válida preservada', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('7.142', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('99.999', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Tentativa sintética recusada', { exact: false })).toHaveCount(0);
+  });
+
+  test('arquivo ausente preserva o cache e avisa que a fonte não foi atualizada', async ({ page }) => {
+    await page.goto('/painel.html');
+    await rm(resolve(testDataPath, 'telas_aplicativo.csv'));
+
+    await page.reload();
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Telas', exact: true })
+      .click();
+    const applicationCard = page.locator('#application-screens-card');
+    await expect(applicationCard.getByText('Fonte não atualizada', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('7.142', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('O evento login não substitui Acesso', { exact: true })).toBeVisible();
+  });
+
+  test('sem cache, arquivo inválido deixa telas do Aplicativo indisponíveis e nunca vira zero', async ({ page }) => {
+    await writeFile(
+      resolve(testDataPath, 'telas_aplicativo.csv'),
+      'periodo;produto;fonte;propriedade;property_id;tipo_registro;item;contagem;usuarios;unidade_contagem;metrica_usuarios;evidencia;observacao\n' +
+        '2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;classe_tela;HomeActivity;0;;visualizacoes;;observado;Classe técnica\n',
+      'utf8',
+    );
+
+    await page.goto('/painel.html');
+    const response = await page.request.get('/api/telas-aplicativo');
+    const payload = await response.json();
+    expect(payload.status).toBe('unavailable');
+    expect(payload.indicators.totalViews).toBeNull();
+    expect(payload.indicators.technicalClasses).toEqual([]);
+    expect(payload.indicators.events).toEqual([]);
+
+    await page.getByRole('tablist', { name: 'Áreas do painel' })
+      .getByRole('tab', { name: 'Telas', exact: true })
+      .click();
+    const applicationCard = page.locator('#application-screens-card');
+    await expect(applicationCard.locator('#application-total-views')).toHaveText('Indisponível');
+    await expect(applicationCard.getByText('0', { exact: true })).toHaveCount(0);
+    await expect(applicationCard.getByText('Sem classes técnicas validadas', { exact: true })).toBeVisible();
+    await expect(applicationCard.getByText('Sem eventos funcionais validados', { exact: true })).toBeVisible();
+  });
+});
+
+
+test.describe('Issue #8 · consolidação da Visão geral', () => {
+  test('consolida somente conjuntos válidos com referência, proveniência e lacunas explícitas', async ({ page }) => {
+    await page.goto('/painel.html');
+
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-user-value="current-total"]')).toHaveText('410');
+    await expect(overview.locator('[data-access-value="overview-logins"]')).toHaveText('1.200');
+    await expect(overview.locator('[data-overview-value="inactive-companies"]')).toHaveText('8');
+    await expect(overview.locator('[data-overview-value="portal-views"]')).toHaveText('12.480');
+    await expect(overview.locator('[data-overview-value="application-views"]')).toHaveText('7.142');
+
+    const sources = overview.getByRole('article', { name: 'Fontes da Visão geral' });
+    await expect(sources.locator('[data-overview-source="users"]')).toContainText('Usuários e novos cadastros');
+    await expect(sources.locator('[data-overview-source="users"]')).toContainText('MySQL · pronto');
+    await expect(sources.locator('[data-overview-source="users"]')).toContainText('01/08/2026 a 30/09/2026');
+    await expect(sources.locator('[data-overview-source="access"]')).toContainText('Acessos · Portal Web');
+    await expect(sources.locator('[data-overview-source="companies"]')).toContainText('Situação em 30/09/2026');
+    await expect(sources.locator('[data-overview-source="portal"]')).toContainText('Microsoft Clarity · parcial');
+    await expect(sources.locator('[data-overview-source="portal"]')).toContainText('Período parcial');
+    await expect(sources.locator('[data-overview-source="application"]')).toContainText('Google Analytics · pronto');
+
+    await expect(overview.locator('[data-overview-value="portal-views-evidence"]')).toHaveText('Estimativa derivada');
+    await expect(overview.locator('[data-overview-value="application-views-evidence"]')).toHaveText('Total observado');
+    await expect(overview.getByText('Visualizações por tela do Portal: Não validado', { exact: true })).toBeVisible();
+    await expect(overview.getByText('O evento login do Google Analytics não substitui Acesso.', { exact: true })).toBeVisible();
+
+    for (const label of ['Loja', 'Pedidos criados', 'Franquias', 'Baixas de usuários', 'Suspensões recentes']) {
+      const gap = overview.locator('[data-overview-gap]').filter({ has: page.getByText(label, { exact: true }) });
+      await expect(gap.getByText('Indisponível', { exact: true })).toBeVisible();
+      await expect(gap.getByText('0', { exact: true })).toHaveCount(0);
+    }
+  });
+
+  test('preserva a versão válida e sinaliza fonte não atualizada na consolidação', async ({ page }) => {
+    await page.goto('/painel.html');
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-overview-value="inactive-companies"]')).toHaveText('8');
+
+    await rm(resolve(testDataPath, 'empresas.csv'));
+    await page.reload();
+
+    await expect(overview.locator('[data-overview-value="inactive-companies"]')).toHaveText('8');
+    await expect(overview.locator('[data-overview-source="companies"]')).toContainText('Fonte não atualizada');
+    await expect(overview.locator('[data-overview-source="companies"]')).toContainText('Situação em 30/09/2026');
+    await expect(overview.locator('[data-overview-source="portal"]')).toContainText('Período parcial');
+    await expect(overview.locator('[data-overview-source="access"]')).toContainText('Fonte validada');
+  });
+
+  test('sem cache, fonte inválida deixa apenas seus indicadores indisponíveis e nunca zero', async ({ page }) => {
+    await writeFile(
+      resolve(testDataPath, 'empresas.csv'),
+      'status;si_status;quantidade\n' +
+        'Operacional;Production;-1\n',
+      'utf8',
+    );
+
+    await page.goto('/painel.html');
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-overview-value="inactive-companies"]')).toHaveText('Indisponível');
+    await expect(overview.locator('[data-overview-source="companies"]')).toContainText('Sem arquivo válido');
+    await expect(overview.locator('[data-overview-value="inactive-companies"]')).not.toHaveText('0');
+    await expect(overview.locator('[data-user-value="current-total"]')).toHaveText('410');
+    await expect(overview.locator('[data-access-value="overview-logins"]')).toHaveText('1.200');
+    await expect(overview.locator('[data-overview-value="portal-views"]')).toHaveText('12.480');
+    await expect(overview.locator('[data-overview-value="application-views"]')).toHaveText('7.142');
+  });
+});
+
+
+test.describe('Issue #8 · fonte de inatividade na Visão geral', () => {
+  const inactivityRow = (overview) => overview.locator('[data-overview-source="inactivity"]');
+
+  test('arquivo de inatividade ausente preserva cache e mostra fonte não atualizada isoladamente', async ({ page }) => {
+    await page.goto('/painel.html');
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-user-value="inactive-30"]')).toHaveText('64');
+
+    await rm(resolve(testDataPath, 'usuarios_inatividade.csv'));
+    await page.reload();
+
+    await expect(overview.locator('[data-user-value="inactive-30"]')).toHaveText('64');
+    await expect(inactivityRow(overview)).toContainText('Sem login há 30 dias');
+    await expect(inactivityRow(overview)).toContainText('MySQL · pronto');
+    await expect(inactivityRow(overview)).toContainText('01/09/2026 a 30/09/2026');
+    await expect(inactivityRow(overview)).toContainText('Fonte não atualizada');
+    await expect(overview.locator('[data-overview-source="users"]')).toContainText('Fonte validada');
+    await expect(overview.locator('[data-access-value="overview-logins"]')).toHaveText('1.200');
+  });
+
+  test('arquivo de inatividade inválido preserva cache e informa a última carga válida isoladamente', async ({ page }) => {
+    await page.goto('/painel.html');
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-user-value="inactive-30"]')).toHaveText('64');
+
+    await writeFile(
+      resolve(testDataPath, 'usuarios_inatividade.csv'),
+      'data_referencia;usuarios_sem_login_30_dias;usuarios_ativos_no_cadastro_sem_login_30_dias;usuarios_nao_ativos_no_cadastro_sem_login_30_dias\n' +
+        '2026-09-31;999;900;99\n',
+      'utf8',
+    );
+    await page.reload();
+
+    await expect(overview.locator('[data-user-value="inactive-30"]')).toHaveText('64');
+    await expect(overview.locator('[data-user-value="inactive-30"]')).not.toHaveText('999');
+    await expect(inactivityRow(overview)).toContainText('MySQL · pronto');
+    await expect(inactivityRow(overview)).toContainText('01/09/2026 a 30/09/2026');
+    await expect(inactivityRow(overview)).toContainText('Última carga válida preservada');
+    await expect(overview.locator('[data-overview-source="users"]')).toContainText('Fonte validada');
+    await expect(overview.locator('[data-overview-value="inactive-companies"]')).toHaveText('8');
+  });
+
+  test('arquivo de inatividade ausente sem cache deixa somente a inatividade indisponível', async ({ page }) => {
+    await rm(resolve(testDataPath, 'usuarios_inatividade.csv'));
+    await page.goto('/painel.html');
+
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-user-value="inactive-30"]')).toHaveText('Indisponível');
+    await expect(overview.locator('[data-user-value="inactive-30"]')).not.toHaveText('0');
+    await expect(inactivityRow(overview)).toContainText('Origem indisponível');
+    await expect(inactivityRow(overview)).toContainText('Referência indisponível');
+    await expect(inactivityRow(overview)).toContainText('Sem arquivo válido');
+    await expect(overview.locator('[data-user-value="current-total"]')).toHaveText('410');
+    await expect(overview.locator('[data-overview-source="users"]')).toContainText('Fonte validada');
+    await expect(overview.locator('[data-overview-value="portal-views"]')).toHaveText('12.480');
+  });
+
+  test('arquivo de inatividade inválido sem cache deixa somente a inatividade indisponível', async ({ page }) => {
+    await writeFile(
+      resolve(testDataPath, 'usuarios_inatividade.csv'),
+      'data_referencia;usuarios_sem_login_30_dias;usuarios_ativos_no_cadastro_sem_login_30_dias;usuarios_nao_ativos_no_cadastro_sem_login_30_dias\n' +
+        '2026-09-31;0;0;0\n',
+      'utf8',
+    );
+    await page.goto('/painel.html');
+
+    const overview = page.getByRole('tabpanel', { name: 'Visão geral' });
+    await expect(overview.locator('[data-user-value="inactive-30"]')).toHaveText('Indisponível');
+    await expect(inactivityRow(overview)).toContainText('Origem indisponível');
+    await expect(inactivityRow(overview)).toContainText('Referência indisponível');
+    await expect(inactivityRow(overview)).toContainText('Sem arquivo válido');
+    await expect(overview.locator('[data-user-value="current-total"]')).toHaveText('410');
+    await expect(overview.locator('[data-overview-source="users"]')).toContainText('Fonte validada');
+    await expect(overview.locator('[data-overview-value="application-views"]')).toHaveText('7.142');
+  });
+});
+
+
+test.describe('Issue #9 · validação funcional integrada', () => {
+  async function readIntegratedPayloads(page) {
+    const [users, access, companies, portal, application] = await Promise.all([
+      page.request.get('/api/usuarios').then((response) => response.json()),
+      page.request.get('/api/acessos').then((response) => response.json()),
+      page.request.get('/api/empresas').then((response) => response.json()),
+      page.request.get('/api/telas-portal').then((response) => response.json()),
+      page.request.get('/api/telas-aplicativo').then((response) => response.json()),
+    ]);
+    return { users, access, companies, portal, application };
+  }
+
+  test('o manifesto e os sete arquivos canônicos alimentam os conjuntos corretos com metadados visíveis', async ({ page }) => {
+    await page.goto('/painel.html');
+    const payloads = await readIntegratedPayloads(page);
+
+    expect(payloads.users.status).toBe('ready');
+    expect(payloads.access.status).toBe('ready');
+    expect(payloads.companies.status).toBe('ready');
+    expect(payloads.portal.status).toBe('ready');
+    expect(payloads.application.status).toBe('ready');
+    expect(payloads.access.fileStates).toEqual({ access: 'ready', ranking: 'ready' });
+
+    const sources = [
+      payloads.users.source,
+      payloads.users.inactivitySource,
+      payloads.access.source,
+      payloads.access.rankingSource,
+      payloads.companies.source,
+      payloads.portal.source,
+      payloads.application.source,
+    ];
+    expect(sources).toHaveLength(7);
+    for (const source of sources) {
+      expect(source).toMatchObject({ contractVersion: '1.0' });
+      expect(source.generatedAt).toMatch(/^2026-09-30T/);
+      expect(source.periodStart).toMatch(/^2026-/);
+      expect(source.periodEnd).toMatch(/^2026-/);
+      expect(source.origin).toMatch(/^(mysql|google_analytics|microsoft_clarity)$/);
+      expect(source.state).toMatch(/^(pronto|parcial)$/);
+    }
+
+    await page.getByRole('tab', { name: 'Usuários e Acessos', exact: true }).click();
+    await expectVisibleSourceMetadata(page, 'usuarios.csv', {
+      origin: 'MySQL', state: 'pronto', period: '01/08/2026 a 30/09/2026',
+    });
+    await expectVisibleSourceMetadata(page, 'usuarios_inatividade.csv', {
+      origin: 'MySQL', state: 'pronto', period: '01/09/2026 a 30/09/2026',
+    });
+    await expectVisibleSourceMetadata(page, 'acessos.csv', {
+      origin: 'MySQL', state: 'pronto', period: '01/08/2026 a 30/09/2026',
+    });
+    await expectVisibleSourceMetadata(page, 'ranking_acessos.csv', {
+      origin: 'MySQL', state: 'pronto', period: '01/08/2026 a 30/09/2026',
+    });
+
+    await page.getByRole('tab', { name: 'Empresas', exact: true }).click();
+    await expectVisibleSourceMetadata(page, 'empresas.csv', {
+      origin: 'MySQL', state: 'pronto', period: '30/09/2026',
+    });
+
+    await page.getByRole('tab', { name: 'Telas', exact: true }).click();
+    await expectVisibleSourceMetadata(page, 'telas_portal.csv', {
+      origin: 'Microsoft Clarity', state: 'parcial', period: '01/08/2026 a 30/09/2026',
+    });
+    await expectVisibleSourceMetadata(page, 'telas_aplicativo.csv', {
+      origin: 'Google Analytics', state: 'pronto', period: '01/08/2026 a 30/09/2026',
+    });
+
+    await page.getByRole('tab', { name: 'Visão geral', exact: true }).click();
+    const overviewSources = page.getByRole('tabpanel', { name: 'Visão geral' })
+      .getByRole('article', { name: 'Fontes da Visão geral' });
+    for (const sourceName of ['users', 'inactivity', 'access', 'companies', 'portal', 'application']) {
+      const row = overviewSources.locator(`[data-overview-source="${sourceName}"]`);
+      await expect(row.locator('[data-source-origin]')).not.toHaveText('Origem indisponível');
+      await expect(row.locator('[data-source-period]')).not.toHaveText('Referência indisponível');
+    }
+
+    for (const label of ['Loja', 'Pedidos criados', 'Franquias', 'Baixas de usuários', 'Suspensões recentes']) {
+      const gap = page.locator('[data-overview-gap]').filter({ has: page.getByText(label, { exact: true }) });
+      await expect(gap.getByText('Indisponível', { exact: true })).toBeVisible();
+      await expect(gap.getByText('0', { exact: true })).toHaveCount(0);
+    }
+    await expect(page.getByText('Visualizações por tela do Portal: Não validado', { exact: true })).toBeVisible();
+    await expect(page.getByText('O evento login do Google Analytics não substitui Acesso.', { exact: true })).toBeVisible();
+  });
+
+  test('uma linha ausente no manifesto não impede a ativação dos demais arquivos válidos', async ({ page }) => {
+    await page.goto('/painel.html');
+    await expect(page.locator('[data-user-value="current-total"]').first()).toHaveText('410');
+
+    const manifestPath = resolve(testDataPath, 'manifesto_carga.csv');
+    const manifest = await readFile(manifestPath, 'utf8');
+    await writeFile(
+      manifestPath,
+      manifest.split(/\r?\n/)
+        .filter((line) => !line.startsWith('1.0;usuarios_inatividade.csv;'))
+        .join('\n'),
+      'utf8',
+    );
+    await writeFile(
+      resolve(testDataPath, 'usuarios.csv'),
+      'tipo_registro;mes;empresa_id_opaco;total_usuarios;ativos_por_status;inativos_por_status;inativados_por_inadimplencia;novos_usuarios;posicao\n' +
+        'snapshot_status_atual;2026-09;;411;331;70;10;;\n' +
+        'novos_usuarios_mes;2026-08;;;;;;30;\n' +
+        'novos_usuarios_mes;2026-09;;;;;;45;\n' +
+        'ranking_novos_usuarios_empresa;2026-09;EMP-001;;;;;13;1\n',
+      'utf8',
+    );
+    await rm(resolve(testDataPath, 'usuarios_inatividade.csv'));
+
+    const response = await page.request.get('/api/usuarios');
+    const payload = await response.json();
+    expect(payload.status).toBe('stale');
+    expect(payload.indicators.currentTotal).toBe(411);
+    expect(payload.indicators.currentNewUsers).toBe(45);
+    expect(payload.indicators.inactive30Days).toBe(64);
+    expect(payload.warnings).toEqual([
+      'usuarios_inatividade.csv: fonte não atualizada; arquivo ausente do manifesto.',
+    ]);
+    expect(payload.rejections).toHaveLength(1);
+    expect(payload.rejections[0]).toMatchObject({
+      file: 'usuarios_inatividade.csv',
+      reasons: ['usuarios_inatividade.csv: fonte não atualizada; arquivo ausente do manifesto.'],
+    });
+    expect(payload.rejections[0].attemptedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  test('estados ready, stale, partial e unavailable preservam cache e rejeições sem conteúdo de linha', async ({ page }) => {
+    await page.goto('/painel.html');
+    const initial = await readIntegratedPayloads(page);
+    expect(Object.values(initial).every((payload) => payload.status === 'ready')).toBe(true);
+
+    const sensitiveMarker = 'synthetic-secret@example.test';
+    await writeFile(
+      resolve(testDataPath, 'acessos.csv'),
+      'mes;produto_digital;total_logins;usuarios_unicos;empresas_clientes_distintas;email\n' +
+        `2026-09;Portal Web;99999;10;2;${sensitiveMarker}\n`,
+      'utf8',
+    );
+    await rm(resolve(testDataPath, 'telas_portal.csv'));
+
+    const staleAccess = await page.request.get('/api/acessos').then((response) => response.json());
+    const stalePortal = await page.request.get('/api/telas-portal').then((response) => response.json());
+    expect(staleAccess.status).toBe('stale');
+    expect(staleAccess.indicators.combinations).toContainEqual(expect.objectContaining({
+      month: '2026-09', product: 'Portal Web', totalLogins: 1200,
+    }));
+    expect(stalePortal.status).toBe('stale');
+    expect(stalePortal.indicators.totalViews).toBe(12480);
+    expect(stalePortal.warning).toContain('arquivo ausente');
+
+    const rejections = [...staleAccess.rejections, stalePortal.rejection];
+    for (const rejection of rejections) {
+      expect(Object.keys(rejection).sort()).toEqual(['attemptedAt', 'file', 'reasons']);
+      expect(rejection.file).toMatch(/\.csv$/);
+      expect(rejection.attemptedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      expect(rejection.reasons.length).toBeGreaterThan(0);
+    }
+    expect(JSON.stringify(rejections)).not.toContain(sensitiveMarker);
+    expect(JSON.stringify(rejections)).not.toContain('99999');
+
+    await rm(resolve(testCachePath, 'acessos.json'));
+    const partialAccess = await page.request.get('/api/acessos').then((response) => response.json());
+    expect(partialAccess.status).toBe('partial');
+    expect(partialAccess.fileStates).toEqual({ access: 'unavailable', ranking: 'ready' });
+    expect(partialAccess.indicators.combinations).toEqual([]);
+    expect(partialAccess.ranking).not.toEqual([]);
+
+    await rm(resolve(testCachePath, 'telas_aplicativo.json'));
+    await writeFile(
+      resolve(testDataPath, 'telas_aplicativo.csv'),
+      'periodo;produto;fonte;propriedade;property_id;tipo_registro;item;contagem;usuarios;unidade_contagem;metrica_usuarios;evidencia;observacao\n' +
+        '2026-08-01 a 2026-09-30;Aplicativo M2M;Google Analytics;App M2M sintético;GA-PROP-TEST-01;total_telas;Total;77777;;visualizacoes;;derivado;Tentativa sintética recusada\n',
+      'utf8',
+    );
+    const unavailableApplication = await page.request.get('/api/telas-aplicativo').then((response) => response.json());
+    expect(unavailableApplication.status).toBe('unavailable');
+    expect(unavailableApplication.indicators.totalViews).toBeNull();
+    expect(JSON.stringify(unavailableApplication.rejection)).not.toContain('77777');
+    expect(JSON.stringify(unavailableApplication.rejection)).not.toContain('Tentativa sintética recusada');
+
+    const stillReady = await Promise.all([
+      page.request.get('/api/usuarios').then((response) => response.json()),
+      page.request.get('/api/empresas').then((response) => response.json()),
+    ]);
+    expect(stillReady.map((payload) => payload.status)).toEqual(['ready', 'ready']);
+  });
+});
+
+
+
+test('Issue #9 · seis abas mantêm teclado, foco, movimento reduzido e limites visuais nos viewports exigidos', async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+
+  for (const viewport of [
+    { width: 1920, height: 1080 },
+    { width: 1366, height: 768 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/painel.html');
+    const navigation = page.getByRole('tablist', { name: 'Áreas do painel' });
+    const tabs = navigation.getByRole('tab');
+    await expect(tabs).toHaveCount(6);
+
+    for (const [index, [tabName, headingName]] of areas.entries()) {
+      const tab = navigation.getByRole('tab', { name: tabName, exact: true });
+      await tab.click();
+      await expect(tab).toHaveAttribute('aria-selected', 'true');
+      await expect(page.getByRole('heading', { name: headingName, exact: true })).toBeVisible();
+      const activePanel = page.locator('.panel.active');
+      await expect(activePanel).toHaveCSS('animation-name', 'none');
+      const layout = await inspectVisiblePanelBounds(page);
+      expect(layout.headingVisible, `${tabName} ${viewport.width}x${viewport.height}: título recortado`).toBe(true);
+      expect(layout.outsideViewport, `${tabName} ${viewport.width}x${viewport.height}: elementos fora do viewport`).toEqual([]);
+      expect(layout.clippedContainers, `${tabName} ${viewport.width}x${viewport.height}: conteúdo fora do cartão`).toEqual([]);
+      expect(layout.overlaps, `${tabName} ${viewport.width}x${viewport.height}: sobreposição`).toEqual([]);
+
+      const evidencePath = testInfo.outputPath(`issue-9-${viewport.width}x${viewport.height}-tab-${index + 1}.png`);
+      await page.screenshot({ path: evidencePath, animations: 'disabled' });
+      await testInfo.attach(`Issue #9 · ${viewport.width}x${viewport.height} · ${tabName}`, {
+        path: evidencePath,
+        contentType: 'image/png',
+      });
+    }
+  }
+
+  const development = page.getByRole('tab', { name: 'Desenvolvimento', exact: true });
+  await development.press('Home');
+  const overview = page.getByRole('tab', { name: 'Visão geral', exact: true });
+  await expect(overview).toBeFocused();
+  const focusStyle = await overview.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
+  });
+  expect(focusStyle.outlineStyle).not.toBe('none');
+  expect(Number.parseFloat(focusStyle.outlineWidth)).toBeGreaterThan(0);
 });

@@ -2,7 +2,12 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DataContractError, loadUserData } from './data/user-data.mjs';
+import { loadAccessData } from './data/access-data.mjs';
+import { loadApplicationData } from './data/application-data.mjs';
+import { loadCompanyData } from './data/company-data.mjs';
+import { DataContractError } from './data/data-common.mjs';
+import { loadPortalData } from './data/portal-data.mjs';
+import { loadUserData } from './data/user-data.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dataDir = resolve(root, process.env.DATA_DIR ?? 'dados');
@@ -53,6 +58,21 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (pathname === '/api/acessos') {
+    try {
+      const data = await loadAccessData(dataDir, cacheDir);
+      sendJsonResponse(response, 200, data, request.method);
+    } catch (error) {
+      if (error instanceof DataContractError) {
+        sendJsonResponse(response, 422, { status: 'unavailable', errors: [error.message] }, request.method);
+        return;
+      }
+      console.error(error);
+      sendJsonResponse(response, 500, { status: 'unavailable', errors: ['Falha interna ao carregar Acessos.'] }, request.method);
+    }
+    return;
+  }
+
   if (pathname === '/api/usuarios') {
     try {
       const data = await loadUserData(dataDir, cacheDir);
@@ -64,6 +84,51 @@ const server = createServer(async (request, response) => {
       }
       console.error(error);
       sendJsonResponse(response, 500, { status: 'unavailable', errors: ['Falha interna ao carregar Usuários.'] }, request.method);
+    }
+    return;
+  }
+
+  if (pathname === '/api/empresas') {
+    try {
+      const data = await loadCompanyData(dataDir, cacheDir);
+      sendJsonResponse(response, 200, data, request.method);
+    } catch (error) {
+      if (error instanceof DataContractError) {
+        sendJsonResponse(response, 422, { status: 'unavailable', errors: [error.message] }, request.method);
+        return;
+      }
+      console.error(error);
+      sendJsonResponse(response, 500, { status: 'unavailable', errors: ['Falha interna ao carregar Empresas Clientes.'] }, request.method);
+    }
+    return;
+  }
+
+  if (pathname === '/api/telas-aplicativo') {
+    try {
+      const data = await loadApplicationData(dataDir, cacheDir);
+      sendJsonResponse(response, 200, data, request.method);
+    } catch (error) {
+      if (error instanceof DataContractError) {
+        sendJsonResponse(response, 422, { status: 'unavailable', errors: [error.message] }, request.method);
+        return;
+      }
+      console.error(error);
+      sendJsonResponse(response, 500, { status: 'unavailable', errors: ['Falha interna ao carregar telas do Aplicativo.'] }, request.method);
+    }
+    return;
+  }
+
+  if (pathname === '/api/telas-portal') {
+    try {
+      const data = await loadPortalData(dataDir, cacheDir);
+      sendJsonResponse(response, 200, data, request.method);
+    } catch (error) {
+      if (error instanceof DataContractError) {
+        sendJsonResponse(response, 422, { status: 'unavailable', errors: [error.message] }, request.method);
+        return;
+      }
+      console.error(error);
+      sendJsonResponse(response, 500, { status: 'unavailable', errors: ['Falha interna ao carregar telas do Portal.'] }, request.method);
     }
     return;
   }

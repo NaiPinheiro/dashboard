@@ -8,7 +8,7 @@ related_targets: []
 # Surface brief — painel.html
 
 MODE: Operate.
-SCOPE: Painel local com seis abas navegáveis. Os indicadores de Usuários usam arquivos agregados validados da Pasta de Dados; as demais áreas permanecem fictícias até suas próprias fatias funcionais.
+SCOPE: Painel local com seis abas navegáveis. Usuários, Acessos, Empresas Clientes e Telas usam arquivos agregados validados da Pasta de Dados; áreas sem contrato permanecem explicitamente indisponíveis e sem números inventados.
 
 ## Direction contract
 
@@ -16,7 +16,7 @@ THESIS: Um briefing executivo guiado, não uma parede uniforme de cartões. A te
 
 OWN-WORLD: Estrutura azul-marinho, fundo azul muito claro, cartões brancos, tipografia sans de trabalho e uma paleta restrita de azul, ciano, verde, âmbar e vermelho para funções semânticas. Bordas, raios, ícones lineares e densidade permanecem consistentes em todas as abas.
 
-STORY: A gerente identifica o período analisado, distingue a abrangência dos arquivos, reconhece quais indicadores usam dados carregados e quais ainda são fictícios, lê o pulso geral e conduz a audiência pelas abas sem trocar de ferramenta. Indisponibilidade, inatividade e suspensão nunca se confundem com zero.
+STORY: A gerente identifica o período analisado, distingue a abrangência dos arquivos, reconhece quais indicadores usam dados carregados e quais permanecem indisponíveis, lê o pulso geral e conduz a audiência pelas abas sem trocar de ferramenta. Indisponibilidade, inatividade e suspensão nunca se confundem com zero.
 
 FIRST VIEWPORT: Barra superior azul-marinho com identidade, aviso de dados mistos e filtros; abaixo, título do período, estado dos dois arquivos de Usuários, resumo equilibrado em cartões e comparação apenas onde o contrato sustenta período anterior. Origem, estado, abrangência e completude aparecem em linguagem comum. Códigos anônimos de empresas são explicados junto ao ranking.
 
